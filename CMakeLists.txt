@@ -6,4 +6,5 @@ cmake_minimum_required (VERSION 3.8)
 project ("Nectere")
 
 # Include sub-projects.
+add_subdirectory ("DataParser")
 add_subdirectory ("Nectere")

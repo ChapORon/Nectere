@@ -1,0 +1,3 @@
+[submodule "DataParser"]
+	path = DataParser
+	url = git@github.com:ChapORon/DataParser.git
