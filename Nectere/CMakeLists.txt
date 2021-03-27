@@ -13,12 +13,22 @@ if(Boost_FOUND)
     link_directories(${Boost_LIBRARY_DIRS})
 
     set(SOURCE_FILES
-            ${CMAKE_CURRENT_SOURCE_DIR}/Nectere.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/Nectere.h
-            ${CMAKE_CURRENT_SOURCE_DIR}/Discord/Discord.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/Discord/Discord.h
-            ${CMAKE_CURRENT_SOURCE_DIR}/Twitch/Twitch.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/Twitch/Twitch.h)
+            ${CMAKE_CURRENT_SOURCE_DIR}/Command/ANectereCommand.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/Command/ANectereCommand.hpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/Event.hpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/ACommand.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/ACommand.hpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/Application.hpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/Application.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/IDGenerator.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/IDGenerator.hpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/ISessionHandler.hpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/Server.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/Server.hpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/Session.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/Session.hpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/UIDVector.hpp "Command/ANectereCommand.hpp" "Command/StopCommand.hpp" "Command/StopCommand.cpp")
 
     add_executable (${NAME} ${SOURCE_FILES})
     if (WIN32)
