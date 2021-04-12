@@ -1,5 +1,7 @@
 #include "Client.hpp"
 
+#include "Logger.hpp"
+
 namespace Nectere
 {
 	Client::Client(const std::string &host, int port) { Connect(host, std::to_string(port)); }
@@ -37,7 +39,7 @@ namespace Nectere
 				if (!ec)
 				{
 					auto session = std::make_shared<Session>(0, m_IOContext, std::move(socket), this);
-					std::cout << "New session opened with ID: " << session->GetID() << std::endl;
+					Logger::out.Log("New session opened with ID: ", session->GetID());
 					m_Sessions.emplace_back(session);
 				}
 				AcceptSession();

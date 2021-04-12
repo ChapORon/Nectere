@@ -38,7 +38,7 @@ int main()
 	}
 	catch (std::exception e)
 	{
-		std::cout << "Cannot connect to localhost: " << e.what() << std::endl;
+		std::cerr << "Cannot connect to localhost: " << e.what() << std::endl;
 	}
 	return 0;
 }

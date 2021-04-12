@@ -23,10 +23,11 @@ namespace Nectere
 		char *m_MessageData{ nullptr };
 
 	private:
+		uint16_t m_SessionID;
+		std::atomic_bool m_Closed;
+		ISessionHandler *m_Handler;
 		Header m_Header;
 		std::string m_Message;
-		ISessionHandler *m_Handler;
-		uint16_t m_SessionID;
 		boost::asio::io_context &m_IOContext;
 		boost::asio::ip::tcp::socket m_Socket;
 

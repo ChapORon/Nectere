@@ -1,6 +1,6 @@
 #include "Command/StopCommand.hpp"
 
-#include <iostream>
+#include "Logger.hpp"
 
 namespace Nectere
 {
@@ -10,7 +10,7 @@ namespace Nectere
 		bool StopCommand::IsValid(const std::string &) const { return true; }
 		void StopCommand::Treat(uint16_t sessionId, const std::string &)
 		{
-			std::cout << '[' << sessionId << "] Stopping server" << std::endl;
+			Logger::out.Log('[', sessionId, "] Stopping server");
 			m_Server->Stop();
 		}
 	}
