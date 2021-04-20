@@ -1,4 +1,5 @@
 ﻿cmake_minimum_required(VERSION 3.19)
+project(Nectere)
 
 set(NAME NectereDiscord)
 
@@ -19,10 +20,5 @@ if (Boost_FOUND)
     set(SOURCE_FILES
             ${CMAKE_CURRENT_SOURCE_DIR}/Discord.cpp)
 
-    add_library(${NAME} SHARED ${SOURCE_FILES})
-    if (WIN32)
-	    target_link_libraries(${NAME} ${Boost_LIBRARIES} Nectere-s)
-    else()
-	    target_link_libraries(${NAME} ${Boost_LIBRARIES} Nectere)
-    endif()
+    add_library(${NAME} MODULE ${SOURCE_FILES})
 endif()
