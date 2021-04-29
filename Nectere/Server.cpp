@@ -1,22 +1,20 @@
 #include "Server.hpp"
 
-#include <boost/filesystem.hpp>
-#include <boost/optional.hpp>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
 #include <filesystem>
 #include "Command/StopCommand.hpp"
+#include "Configuration.hpp"
 #include "Logger.hpp"
+
 
 typedef std::string FUNCTION(ApplicationName)();
 typedef void FUNCTION(ApplicationLoader)(const std::shared_ptr<Nectere::Application> &);
 
 namespace Nectere
 {
-	Server::Server(int port) :
+	Server::Server() :
 		m_IsClosing(false),
 		m_Closed(false),
-		m_Acceptor(m_IOContext, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port))
+		m_Acceptor(m_IOContext, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), Configuration::GetInt("Network.Port")))
 	{
 		GenerateNectereApplication();
 		AcceptSession();
@@ -38,7 +36,7 @@ namespace Nectere
 
 	void Server::CloseSession(uint16_t id)
 	{
-		Logger::out.Log("Closing session with ID: ", id);
+		LOG(LogType::Standard, "Closing session with ID: ", id);
 		m_SessionIDGenerator.FreeID(id);
 		if (!m_IsClosing.load())
 			m_Sessions.Remove(id);
@@ -52,7 +50,7 @@ namespace Nectere
 				if (!ec)
 				{
 					auto session = std::make_shared<Session>(m_SessionIDGenerator.GenerateID(), m_IOContext, std::move(socket), this);
-					Logger::out.Log("New session opened with ID: ", session->GetID());
+					LOG(LogType::Standard, "New session opened with ID: ", session->GetID());
 					m_Sessions.Add(session);
 				}
 				AcceptSession();
@@ -68,27 +66,66 @@ namespace Nectere
 
 	void Server::LoadApplication(const std::filesystem::path &path)
 	{
+		std::string absolutePath = std::filesystem::absolute(path).string();
 		std::string moduleName = path.filename().string();
-		DynamicLibrary dynamicLibrary(std::filesystem::absolute(path).string());
-		if (!dynamicLibrary)
-			return;
-		Logger::out.Log(moduleName, ": Module loaded");
-		ApplicationName applicationName = dynamicLibrary.Load<ApplicationName>("Nectere_ApplicationName");
-		if (!applicationName)
-			return;
-		std::string name = applicationName();
-		if (name.empty())
-			return;
-		Logger::out.Log(moduleName, ": Application name is ", name);
-		ApplicationLoader applicationLoader = dynamicLibrary.Load<ApplicationLoader>("Nectere_ApplicationLoader");
-		if (!applicationLoader)
-			return;
-		Logger::out.Log(moduleName, ": Loading application");
-		std::shared_ptr<Application> application = std::make_shared<Application>(m_ApplicationIDGenerator.GenerateID(), name);
-		applicationLoader(application);
-		m_LoadedLibrary.emplace_back(dynamicLibrary);
-		m_Applications.Add(application);
-		Logger::out.Log(moduleName, ": Application loaded");
+		auto lib = m_LoadedLibrary.find(absolutePath);
+		if (lib == m_LoadedLibrary.end())
+		{
+			std::shared_ptr<DynamicLibrary> dynamicLibrary = std::make_shared<DynamicLibrary>(absolutePath);
+			if (!dynamicLibrary)
+				return;
+			LOG(LogType::Standard, moduleName, ": Module loaded");
+			ApplicationName applicationName = dynamicLibrary->Load<ApplicationName>("Nectere_ApplicationName");
+			if (!applicationName)
+				return;
+			std::string name = applicationName();
+			if (name.empty())
+				return;
+			LOG(LogType::Standard, moduleName, ": Application name is ", name);
+			ApplicationLoader applicationLoader = dynamicLibrary->Load<ApplicationLoader>("Nectere_ApplicationLoader");
+			if (!applicationLoader)
+				return;
+			LOG(LogType::Standard, moduleName, ": Loading application");
+			std::shared_ptr<Application> application = std::make_shared<Application>(m_ApplicationIDGenerator.GenerateID(), name);
+			applicationLoader(application);
+			m_LoadedLibrary[dynamicLibrary->GetPath()] = std::make_pair(dynamicLibrary, application);
+			m_Applications.Add(application);
+			LOG(LogType::Standard, moduleName, ": Application loaded");
+		}
+		else
+		{
+			std::shared_ptr<DynamicLibrary> dynamicLibrary = (*lib).second.first;
+			std::shared_ptr<Application> application = (*lib).second.second;
+			if (dynamicLibrary->CanReload())
+			{
+				dynamicLibrary->Reload();
+				if (!dynamicLibrary)
+				{
+					uint16_t applicationID = application->GetID();
+					m_ApplicationIDGenerator.FreeID(applicationID);
+					m_Applications.Remove(applicationID);
+					m_LoadedLibrary.erase(lib);
+					return;
+				}
+				application->BeforeReloading();
+				LOG(LogType::Standard, moduleName, ": Module reloaded");
+				ApplicationName applicationName = dynamicLibrary->Load<ApplicationName>("Nectere_ApplicationName");
+				if (!applicationName)
+					return;
+				std::string name = applicationName();
+				if (name.empty())
+					return;
+				application->SetName(name);
+				LOG(LogType::Standard, moduleName, ": New application name is ", name);
+				ApplicationLoader applicationLoader = dynamicLibrary->Load<ApplicationLoader>("Nectere_ApplicationLoader");
+				if (!applicationLoader)
+					return;
+				LOG(LogType::Standard, moduleName, ": Reloading application");
+				applicationLoader(application);
+				LOG(LogType::Standard, moduleName, ": Application reloaded");
+				application->AfterReloading();
+			}
+		}
 	}
 
 	void Server::Update()
@@ -131,7 +168,7 @@ namespace Nectere
 		if (!m_Closed.load())
 		{
 			boost::asio::post(m_IOContext, [this]() {
-				Logger::out.Log("Closing server");
+				LOG(LogType::Standard, "Closing server");
 				m_IsClosing.store(true);
 				for (const auto &session : m_Sessions.GetElements())
 					session->Close();

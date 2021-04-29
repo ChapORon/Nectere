@@ -19,12 +19,12 @@ namespace Nectere
 		boost::asio::async_read(m_Socket, boost::asio::buffer(m_HeaderData, sizeof(Session::Header)), [this](boost::system::error_code ec, size_t) {
 			if (!ec)
 			{
-				Logger::out.Log('[', m_SessionID, "] Decoding header");
+				LOG(LogType::Standard, '[', m_SessionID, "] Decoding header");
 				std::memcpy(&m_Header, m_HeaderData, sizeof(Header));
 				if (m_MessageData)
 					delete[](m_MessageData);
 				m_MessageData = new char[m_Header.messageLength + 1];
-				Logger::out.Log('[', m_SessionID, "] Header decoded, reading ", m_Header.messageLength, " bytes");
+				LOG(LogType::Standard, '[', m_SessionID, "] Header decoded, reading ", m_Header.messageLength, " bytes");
 				ReadData();
 			}
 			else if (!m_Closed.load())
@@ -45,7 +45,7 @@ namespace Nectere
 					m_MessageData = nullptr;
 				}
 				Event event = Event{ m_Header.applicationID, m_Header.messageType, m_Message };
-				Logger::out.Log('[', m_SessionID, "] Received: \"", event.m_Data, '"');
+				LOG(LogType::Standard, '[', m_SessionID, "] Received: \"", event.m_Data, '"');
 				m_Handler->OnReceive(m_SessionID, event);
 				ReadHeader();
 			}

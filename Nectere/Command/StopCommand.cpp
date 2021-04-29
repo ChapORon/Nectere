@@ -10,7 +10,7 @@ namespace Nectere
 		bool StopCommand::IsValid(const std::string &) const { return true; }
 		void StopCommand::Treat(uint16_t sessionId, const std::string &)
 		{
-			Logger::out.Log('[', sessionId, "] Stopping server");
+			LOG(LogType::Standard, '[', sessionId, "] Stopping server");
 			m_Server->Stop();
 		}
 	}

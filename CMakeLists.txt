@@ -5,4 +5,3 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_subdirectory(Nectere)
 add_subdirectory(NectereClientTest)
-add_subdirectory(NectereDiscord)

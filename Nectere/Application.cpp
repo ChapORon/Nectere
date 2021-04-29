@@ -9,6 +9,8 @@ namespace Nectere
 	void Application::AddCommand(const std::shared_ptr<ACommand> &command)
 	{
 		m_Commands.Add(command);
+		if (m_Handler != nullptr)
+			m_Handler->OnCommandAdded(command);
 	}
 
 	bool Application::IsEventAllowed(const Event &event)
@@ -25,9 +27,26 @@ namespace Nectere
 
 	void Application::Update()
 	{
-		double deltaTime = std::chrono::duration<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now() - m_UpdateElapsedTime)).count();
+		float deltaTime = std::chrono::duration<float>(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now() - m_UpdateElapsedTime)).count();
+		if (m_Handler != nullptr)
+			m_Handler->OnUpdate(deltaTime);
 		//Logger::out.Log(m_Name, ": Time since last update: ", deltaTime, 's');
 		m_UpdateElapsedTime = std::chrono::system_clock::now();
 	}
 
+	void Application::BeforeReloading()
+	{
+		m_Commands.Clear();
+		if (m_Handler != nullptr)
+		{
+			m_Handler->OnBeforeReload();
+			m_Handler = nullptr;
+		}
+	}
+
+	void Application::AfterReloading()
+	{
+		if (m_Handler != nullptr)
+			m_Handler->OnAfterReload();
+	}
 }

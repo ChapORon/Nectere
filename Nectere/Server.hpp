@@ -2,10 +2,10 @@
 
 #include <filesystem>
 #include "Application.hpp"
+#include "DynamicLibrary.hpp"
 #include "IDGenerator.hpp"
 #include "Session.hpp"
 #include "UIDVector.hpp"
-#include "DynamicLibrary.hpp"
 
 namespace Nectere
 {
@@ -21,7 +21,7 @@ namespace Nectere
 		UIDVector<Session> m_Sessions;
 		UIDVector<Application> m_Applications;
 		UIDVector<ACommand> m_Commands;
-		std::vector<DynamicLibrary> m_LoadedLibrary;
+		std::unordered_map<std::string, std::pair<std::shared_ptr<DynamicLibrary>, std::shared_ptr<Application>>> m_LoadedLibrary;
 
 	private:
 		void OnReceive(uint16_t, const Event &) override;
@@ -33,7 +33,7 @@ namespace Nectere
 		void Update();
 
 	public:
-		Server(int);
+		Server();
 		void LoadApplications();
 		void Send(uint16_t, const Event &);
 		void Start();

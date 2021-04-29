@@ -150,5 +150,10 @@ namespace Nectere
 			else if (id == idOnRight)
 				m_Elements.erase(m_Elements.begin() + right);
 		}
+
+		void Clear()
+		{
+			m_Elements.clear();
+		}
 	};
 }
