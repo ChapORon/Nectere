@@ -519,16 +519,18 @@ namespace Nectere
 
 		std::string Unit::ToString() const
 		{
-			std::string prefix;
+			std::stringstream prefix;
 			if (Nectere::Configuration::Is("ScriptEngine.DisplayTag", true) && HaveTags())
-				prefix = TagToString() + " ";
+				prefix << TagToString() << ' ';
 			if (Nectere::Configuration::Is("ScriptEngine.DisplayName", true))
-				prefix = prefix + m_Name + ": ";
+				prefix << m_Name << ": ";
 			if (m_Error)
-				return prefix + "ERROR";
-			if (!m_Build)
-				return prefix + "null";
-			return prefix + ms_Typer.ToString(m_Type.GetType(), this);
+				prefix << "ERROR";
+			else if (!m_Build)
+				prefix << "null";
+			else
+				prefix << ms_Typer.ToString(m_Type.GetType(), this);
+			return prefix.str();
 		}
 
 		std::string Unit::ToRawString() const

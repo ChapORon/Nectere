@@ -1,2 +1,5 @@
 [SearchableFiles.include]
-*
+*.c
+*.cpp
+*.h
+*.hpp

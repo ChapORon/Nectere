@@ -30,11 +30,11 @@ namespace Nectere
 			int ExtractPos(std::string &) const;
 			void ReplaceAt(const std::string &, int, const std::vector<Node> &);
 			void InsertAt(const std::string &, int, const std::vector<Node> &);
-			template <typename T>
-			void AddNativeType(const std::string &key, const std::vector<T> &values, bool replace = false)
+			template <typename t_NativeTypeToAdd>
+			void AddNativeType(const std::string &key, const std::vector<t_NativeTypeToAdd> &values, bool replace = false)
 			{
 				std::vector<Node> datas;
-				for (const T &value : values)
+				for (const t_NativeTypeToAdd &value : values)
 					datas.emplace_back(Node("", std::to_string(value)));
 				Add(key, datas, replace);
 			}
@@ -69,30 +69,22 @@ namespace Nectere
 			void SetValue(const std::string &);
 			//=========================Element getter=========================
 			const Node &GetNode(const std::string &) const;
-			template <typename T>
-			T Get(const std::string &key) const { return Serializer<T>().FromNode(GetNode(key)); }
-			template <> bool Get<bool>(const std::string &key) const { return (bool)GetNode(key); }
-			template <> char Get<char>(const std::string &key) const { return (char)GetNode(key); }
-			template <> int Get<int>(const std::string &key) const { return (int)GetNode(key); }
-			template <> float Get<float>(const std::string &key) const { return (float)GetNode(key); }
-			template <> double Get<double>(const std::string &key) const { return (double)GetNode(key); }
-			template <> long Get<long>(const std::string &key) const { return (long)GetNode(key); }
-			template <> std::string Get<std::string>(const std::string &key) const { return (std::string)GetNode(key); }
-			template <> const std::string &Get<const std::string &>(const std::string &key) const { return (const std::string &)GetNode(key); }
+			template <typename t_TypeToGet>
+			t_TypeToGet Get(const std::string &key) const { return static_cast<t_TypeToGet>(GetNode(key)); }
 			//=========================Insertion=========================
-			template <typename T>
-			void Add(const std::string &key, const T &value, bool replace = false)
+			template <typename t_TypeToAdd>
+			void Add(const std::string &key, const t_TypeToAdd &value, bool replace = false)
 			{
-				std::vector<T> values;
+				std::vector<t_TypeToAdd> values;
 				values.emplace_back(value);
 				Add(key, values, replace);
 			}
-			template <typename T>
-			void Add(const std::string &key, const std::vector<T> &values, bool replace = false)
+			template <typename t_TypeToAdd>
+			void Add(const std::string &key, const std::vector<t_TypeToAdd> &values, bool replace = false)
 			{
 				std::vector<Node> datas;
-				for (const T &value : values)
-					datas.emplace_back(Serializer<T>().ToNode(value));
+				for (const t_TypeToAdd &value : values)
+					datas.emplace_back(Serializer<t_TypeToAdd>().ToNode(value));
 				Add(key, datas, replace);
 			}
 			template <> void Add<bool>(const std::string &key, const std::vector<bool> &values, bool replace)
@@ -136,6 +128,11 @@ namespace Nectere
 			bool HaveNamedChild() const;
 			bool IsEmpty() const;
 			//=========================Cast operator=========================
+			template <typename t_TypeToCastTo>
+			explicit operator t_TypeToCastTo() const
+			{
+				return Serializer<t_TypeToCastTo>().FromNode(GetNode(key));
+			}
 			explicit operator const std::string &() const
 			{
 				return m_Value;

@@ -1,57 +1,101 @@
-﻿#include <iostream>
+﻿#include <csignal>
+#include <iostream>
+#include "ApplicationManager.hpp"
 #include "Configuration.hpp"
-#include "Server.hpp"
 #include "Logger.hpp"
-#include "Dp/Json.hpp"
-#include "Dp/Xml.hpp"
+#include "Parameters/LogPathParameter.hpp"
+#include "Parameters/NetworkPortParameter.hpp"
+#include "Parameters/VerboseParameter.hpp"
+#include "Network/Server.hpp"
+#include "ThreadSystem.hpp"
 
-#include "parg.h"
+Nectere::ThreadSystem *g_threadSystem = nullptr;
+Nectere::Network::AServer *g_Server = nullptr;
 
 namespace Nectere
 {
-	static void SetPort(const char *value)
-	{
-		try
-		{
-			Configuration::Set("Network.Port", std::stoi(value));
-			LOG(LogType::Standard, "Setting configuration port to ", Configuration::GetInt("Network.Port"));
-		}
-		catch (const std::exception &) {}
-	}
-
 	static void Init()
 	{
+		//Log
+		Configuration::Add(std::make_shared<Parameters::VerboseParameter>());
+		std::shared_ptr<Parameters::LogInFileParameter> logFile = std::make_shared<Parameters::LogInFileParameter>();
+		Configuration::Add(logFile);
+		Configuration::Add(std::make_shared<Parameters::LogPathParameter>(logFile));
 
-		//Script Engine
-		#ifndef DEBUG
-			Configuration::Set("Verbose", false);
-		#else
-			Configuration::Set("Verbose", true);
-		#endif
-		
 		//Network
-		Configuration::Set("Network.Port", 4242);
+		Configuration::Add(std::make_shared<Parameters::NetworkPortParameter>());
 
 		//Script Engine
-		Configuration::Set("ScriptEngine.DoSmartBuild", true);
-		Configuration::Set("ScriptEngine.DoConsoleOutput", true);
-		Configuration::Set("ScriptEngine.DoCodingStyle", false);
-		Configuration::Set("ScriptEngine.DefaultCodingStyle", false);
-		Configuration::Set("ScriptEngine.DisplayName", false);
-		Configuration::Set("ScriptEngine.DisplayTag", false);
+		Configuration::Add(std::make_shared<Configuration::BoolParameter>("ScriptEngine.DoSmartBuild", true));
+		Configuration::Add(std::make_shared<Configuration::BoolParameter>("ScriptEngine.DoCodingStyle", false));
+		Configuration::Add(std::make_shared<Configuration::BoolParameter>("ScriptEngine.DisplayName", false));
+		Configuration::Add(std::make_shared<Configuration::BoolParameter>("ScriptEngine.DisplayTag", false));
 	}
 }
 
+#ifdef WIN32
+	static BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
+	{
+		switch (fdwCtrlType)
+		{
+		case CTRL_C_EVENT:
+		case CTRL_CLOSE_EVENT:
+		{
+			if (g_Server)
+				g_Server->Stop();
+			if (g_threadSystem)
+				g_threadSystem->Stop();
+			return TRUE;
+		}
+		case CTRL_BREAK_EVENT:
+		case CTRL_LOGOFF_EVENT:
+		case CTRL_SHUTDOWN_EVENT:
+		{
+			if (g_Server)
+				g_Server->Stop();
+			if (g_threadSystem)
+				g_threadSystem->Stop();
+			return FALSE;
+		}
+		default:
+			return FALSE;
+		}
+	}
+#else
+	static void SigInterruptHandler(int)
+	{
+		if (g_Server)
+			g_Server->Stop();
+		if (g_threadSystem)
+			g_threadSystem->Stop();
+	}
+#endif
+
 int main(int argc, char **argv)
 {
-	Nectere::Init();
-	parg *root = parg_alloc();
-	parg_add_vcallback(root, "port", &Nectere::SetPort, 2);
-	parg_add_vcallback(root, "p", &Nectere::SetPort, 1);
-	parg_parse(root, argc, argv);
-	parg_free(root);
-	Nectere::Server server;
-    server.LoadApplications();
- 	//server.Start();
-	return 0;
+	#ifdef WIN32
+		if (!SetConsoleCtrlHandler(CtrlHandler, TRUE))
+			return -1;
+	#else
+		::signal(SIGINT, SigInterruptHandler);
+	#endif
+	if (g_threadSystem = new Nectere::ThreadSystem())
+	{
+		g_threadSystem->Start();
+		Nectere::Init();
+		Nectere::ApplicationManager applicationManager;
+		if (Nectere::Configuration::LoadConfiguration(argc, argv))
+		{
+			if (g_Server = Nectere::Network::MakeServer(Nectere::Configuration::Get<int>("Network.Port"), g_threadSystem, &applicationManager))
+			{
+				applicationManager.LoadApplications(g_Server, g_threadSystem);
+				if (g_Server->Start())
+					g_threadSystem->Await();
+				delete(g_Server);
+			}
+		}
+		delete(g_threadSystem);
+		return 0;
+	}
+	return 1;
 }

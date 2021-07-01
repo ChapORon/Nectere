@@ -19,7 +19,7 @@ namespace Nectere
 	class Application
 	{
 		friend class AApplicationHandler;
-		friend class Server;
+		friend class ApplicationManager;
 	private:
 		uint16_t m_ID;
 		std::string m_Name;

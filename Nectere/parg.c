@@ -32,11 +32,11 @@ static int parse_argument(parg *root, int argc, char **argv, int n)
 	char *value = NULL;
 	if (arg[i] == '-')
 	{
-		int restriction = 1;
+		int restriction = PARG_SIMPLE_DASH_RESTRICTION;
 		++i;
 		if (arg[i] == '-')
 		{
-			restriction = 2;
+			restriction = PARG_DOUBLE_DASH_RESTRICTION;
 			++i;
 			while (arg[i] != '=' && arg[i] != '\0')
 			{
@@ -57,21 +57,20 @@ static int parse_argument(parg *root, int argc, char **argv, int n)
 					return n;
 				argument = argument->childs[arg[i++]];
 			}
-			if (n < argc - 1)
-				value = argv[++n];
-		}
-		if (argument != NULL && argument != root && (argument->restriction == 0 || argument->restriction == restriction))
-		{
-			if (argument->vcallback != NULL)
+			if (n < argc - 1 && argument->value_restriction != PARG_NEED_NO_VALUE)
 			{
-				if (value != NULL && value[0] != '\0')
-				{
-					argument->vcallback(value);
-				}
+				if (argv[n + 1][0] != '-' || argument->value_restriction == PARG_NEED_VALUE)
+					value = argv[++n];
 			}
-			else
+		}
+		if ((value == NULL && argument->value_restriction == PARG_NEED_VALUE) ||
+			(value != NULL && argument->value_restriction == PARG_NEED_NO_VALUE))
+			return n;
+		if (argument != NULL && argument->callback != NULL && argument != root && (argument->restriction == 0 || argument->restriction == restriction))
+		{
+			if (value == NULL || value[0] != '\0')
 			{
-				argument->ecallback();
+				argument->callback(argument->name, value, argument->restriction);
 			}
 		}
 	}
@@ -83,8 +82,10 @@ parg *parg_alloc()
 	parg *argument = (parg *)malloc(sizeof(parg));
 	if (argument != NULL)
 	{
-		argument->vcallback = NULL;
-		argument->ecallback = NULL;
+		argument->restriction = PARG_NO_RESTRICTION;
+		argument->value_restriction = PARG_OPTIONNAL_VALUE;
+		argument->name = NULL;
+		argument->callback = NULL;
 		for (unsigned int n = 0; n != CHAR_MAX; ++n)
 			argument->childs[n] = NULL;
 	}
@@ -104,7 +105,7 @@ void parg_free(parg *root)
 	}
 }
 
-void parg_add_vcallback(parg *root, const char *argument, void (*callback)(const char *), int restriction)
+void parg_add_callback(parg *root, const char *argument, void (*callback)(const char *, const char *, int), int restriction, int value_restriction)
 {
 	if (root != NULL)
 	{
@@ -112,21 +113,9 @@ void parg_add_vcallback(parg *root, const char *argument, void (*callback)(const
 		if (new_argument != NULL)
 		{
 			new_argument->restriction = restriction;
-			new_argument->vcallback = callback;
-			new_argument->ecallback = NULL;
-		}
-	}
-}
-
-void parg_add_ecallback(parg *root, const char *argument, void (*callback)())
-{
-	if (root != NULL)
-	{
-		parg *new_argument = get_argument_child(root, argument);
-		if (new_argument != NULL)
-		{
-			new_argument->ecallback = callback;
-			new_argument->vcallback = NULL;
+			new_argument->value_restriction = value_restriction;
+			new_argument->name = argument;
+			new_argument->callback = callback;
 		}
 	}
 }

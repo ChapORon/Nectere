@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <mutex>
 #include <sstream>
 #include <vector>
 
@@ -30,8 +31,10 @@ namespace Nectere
 	private:
 		bool m_Mute;
 		std::string m_Format;
+		mutable std::mutex m_Mutex;
 
 	private:
+		void LogFile(const std::string &, const std::string &, std::tm *) const;
 		void Stringify(std::stringstream &os) const {}
 		template <typename t_FirstElement>
 		void Stringify(std::stringstream &os, const t_FirstElement &first) const

@@ -1,44 +1,140 @@
 #include "Configuration.hpp"
 
+#include <filesystem>
+#include <iostream>
+#include "Dp/Json.hpp"
+#include "Logger.hpp"
+#include "parg.h"
+#include "Script/CodingStyle.hpp"
+
 namespace Nectere
 {
-	std::unordered_map<std::string, bool> Configuration::ms_BoolParameters;
+	bool Configuration::ms_ShouldStartServer = true;
+	std::string Configuration::ms_ConfigurationFilePath = "conf.json";
+	std::unordered_map<std::string, std::string> Configuration::ms_ArgumentToParameter;
+	std::unordered_map<std::string, std::shared_ptr<Configuration::AParameter>> Configuration::ms_Parameters;
 
-	bool Configuration::Is(const std::string &name, bool value)
+	bool Configuration::BoolParameter::DefaultValue() const { return m_DefaultValue; }
+	bool Configuration::BoolParameter::Parse() const { return true; }
+	bool Configuration::BoolParameter::Parse(const std::string &value) const { return std::stoi(value); }
+	Configuration::BoolParameter::BoolParameter(const std::string &name, bool defaultValue) : ATypedParameter<bool>(name), m_DefaultValue(defaultValue) {}
+	Configuration::BoolParameter::BoolParameter(const std::string &name, const std::string &node, bool defaultValue) : ATypedParameter<bool>(name, node), m_DefaultValue(defaultValue) {}
+
+	Configuration::AParameter::AParameter(const std::string &name) : m_Name(name) {}
+	Configuration::AParameter::AParameter(const std::string &name, const std::string &node) : m_Name(name), m_JsonNode(node) {}
+
+	void Configuration::AParameter::AddRestriction(const std::string &argument, int restriction, int valueRestriction)
 	{
-		auto it = ms_BoolParameters.find(name);
-		if (it != ms_BoolParameters.end())
-			return (*it).second == value;
-		return false;
+		m_Restrictions[argument] = std::pair(restriction, valueRestriction);
 	}
 
-	bool Configuration::GetBool(const std::string &name)
+	void Configuration::AParameter::AddToParg(parg *root) const
 	{
-		return ms_BoolParameters[name];
+		for (const auto &pair : m_Restrictions)
+		{
+			ms_ArgumentToParameter[pair.first] = GetName();
+			parg_add_callback(root, pair.first.c_str(), &Configuration::Callback, pair.second.first, pair.second.second);
+		}
 	}
 
-	void Configuration::Set(const std::string &name, bool value)
+	void Configuration::AParameter::DumpHelp() const
 	{
-		ms_BoolParameters[name] = value;
+		if (!m_Restrictions.empty())
+		{
+			std::string description = GetDescription();
+			if (!description.empty())
+				std::cout << GetDescription() << std::endl;
+			else
+			{
+				unsigned int n = 0;
+				for (const auto &pair : m_Restrictions)
+				{
+					std::string arg = pair.first;
+					int restriction = pair.second.first;
+					if (n != 0)
+						std::cout << " ";
+					if (restriction == PARG_DOUBLE_DASH_RESTRICTION)
+						std::cout << "--" << arg << " ";
+					else if (restriction == PARG_DOUBLE_DASH_RESTRICTION)
+						std::cout << '-' << arg << " ";
+					else
+						std::cout << '-' << arg << " --" << arg << " ";
+					++n;
+				}
+				std::cout << std::endl;
+			}
+		}
 	}
 
-	std::unordered_map<std::string, int> Configuration::ms_IntParameters;
-
-	bool Configuration::Is(const std::string &name, int value)
+	bool Configuration::Have(const std::string &parameter)
 	{
-		auto it = ms_IntParameters.find(name);
-		if (it != ms_IntParameters.end())
-			return (*it).second == value;
-		return false;
+		return (ms_Parameters.find(parameter) != ms_Parameters.end());
 	}
 
-	int Configuration::GetInt(const std::string &name)
+	void Configuration::Add(const std::shared_ptr<AParameter> &parameter)
 	{
-		return ms_IntParameters[name];
+		if (parameter != nullptr)
+		{
+			parameter->Init();
+			ms_Parameters[parameter->GetName()] = parameter;
+		}
 	}
 
-	void Configuration::Set(const std::string &name, int value)
+	bool Configuration::LoadConfiguration(int argc, char **argv)
 	{
-		ms_IntParameters[name] = value;
+		parg *root = parg_alloc();
+		for (const auto &pair : ms_Parameters)
+			pair.second->AddToParg(root);
+		parg_add_callback(root, "config-file", &Configuration::ConfigFile, PARG_DOUBLE_DASH_RESTRICTION, PARG_NEED_NO_VALUE);
+		parg_add_callback(root, "help", &Configuration::Help, PARG_DOUBLE_DASH_RESTRICTION, PARG_NEED_NO_VALUE);
+		parg_add_callback(root, "h", &Configuration::Help, PARG_SIMPLE_DASH_RESTRICTION, PARG_NEED_NO_VALUE);
+		parg_parse(root, argc, argv);
+		parg_free(root);
+		std::string configPath = std::filesystem::absolute(ms_ConfigurationFilePath).string();
+		Dp::Node node = Dp::Json::LoadFromFile(configPath);
+		if (!node.IsNull())
+		{
+			for (const auto &pair : ms_Parameters)
+			{
+				auto parameter = pair.second;
+				std::string nodeName = parameter->GetJsonName();
+				if (!nodeName.empty())
+				{
+					if (node.Find(nodeName))
+						parameter->LoadNode(node.GetNode(nodeName));
+				}
+			}
+		}
+		if (ms_ShouldStartServer)
+			Script::CodingStyle::Init();
+		return ms_ShouldStartServer;
+	}
+
+	void Configuration::Callback(const char *name, const char *value, int)
+	{
+		if (name != nullptr)
+		{
+			auto it = ms_ArgumentToParameter.find(std::string(name));
+			if (it != ms_ArgumentToParameter.end())
+			{
+				auto parameter = ms_Parameters.find((*it).second);
+				if (parameter != ms_Parameters.end())
+					(*parameter).second->ParseArgument(value);
+			}
+		}
+	}
+
+	void Configuration::Help(const char *, const char *, int)
+	{
+		ms_ShouldStartServer = false;
+		std::cout << "-h --help\t\t\tShow help on the command lines parameters allowed." << std::endl;
+		for (const auto &pair : ms_Parameters)
+			pair.second->DumpHelp();
+	}
+
+	void Configuration::ConfigFile(const char *, const char *value, int)
+	{
+		ms_ConfigurationFilePath = value;
+		LOG(LogType::Verbose, "Changed configuration file path to \"", ms_ConfigurationFilePath, '\"');
 	}
 }

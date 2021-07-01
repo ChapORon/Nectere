@@ -16,8 +16,8 @@ namespace Nectere
 
         public:
             static Node Create(const std::string &, const std::string & = "1.0", const std::string & = "UTF-8");
-            template <typename T>
-            static void AddAttribute(Node &, const std::string &, const T &)
+            template <typename t_AttributeType>
+            static void AddAttribute(Node &, const std::string &, const t_AttributeType &value)
             {
                 if (StringUtils::Find(key, '.'))
                     return;

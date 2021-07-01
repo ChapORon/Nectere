@@ -1,70 +1,37 @@
-#include "Server.hpp"
+#include "ApplicationManager.hpp"
 
-#include <filesystem>
 #include "Command/StopCommand.hpp"
 #include "Configuration.hpp"
 #include "Logger.hpp"
-
+#include "ThreadSystem.hpp"
 
 typedef std::string FUNCTION(ApplicationName)();
 typedef void FUNCTION(ApplicationLoader)(const std::shared_ptr<Nectere::Application> &);
 
 namespace Nectere
 {
-	Server::Server() :
-		m_IsClosing(false),
-		m_Closed(false),
-		m_Acceptor(m_IOContext, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), Configuration::GetInt("Network.Port")))
+	void ApplicationManager::OnReceive(uint16_t sessionId, const Event &message)
 	{
-		GenerateNectereApplication();
-		AcceptSession();
-	}
-
-	void Server::OnReceive(uint16_t sessionId, const Event &message)
-	{
+		LOG(LogType::Verbose, "Server created on port ", Configuration::Get<int>("Network.Port"));
 		if (const std::shared_ptr<Application> &application = m_Applications.Get(message.m_ApplicationID))
 		{
+			LOG(LogType::Verbose, "Checking if application \"", application->GetName(), "\" can receive and treat event with code ", message.m_EventCode);
 			if (application->IsEventAllowed(message))
+			{
+				LOG(LogType::Verbose, "Treating event");
 				application->Treat(sessionId, message);
+			}
 		}
 	}
 
-	void Server::OnWrite(uint16_t sessionId)
-	{
-
-	}
-
-	void Server::CloseSession(uint16_t id)
-	{
-		LOG(LogType::Standard, "Closing session with ID: ", id);
-		m_SessionIDGenerator.FreeID(id);
-		if (!m_IsClosing.load())
-			m_Sessions.Remove(id);
-	}
-
-	void Server::AcceptSession()
-	{
-		m_Acceptor.async_accept(
-			[this](boost::system::error_code ec, boost::asio::ip::tcp::socket socket)
-			{
-				if (!ec)
-				{
-					auto session = std::make_shared<Session>(m_SessionIDGenerator.GenerateID(), m_IOContext, std::move(socket), this);
-					LOG(LogType::Standard, "New session opened with ID: ", session->GetID());
-					m_Sessions.Add(session);
-				}
-				AcceptSession();
-			});
-	}
-
-	void Server::GenerateNectereApplication()
+	void ApplicationManager::GenerateNectereApplication(Network::AServer *server, ThreadSystem *threadSystem)
 	{
 		std::shared_ptr<Application> application = std::make_shared<Application>(m_ApplicationIDGenerator.GenerateID(), "Nectere");
-		application->AddCommand(std::make_shared<Command::StopCommand>(this));
+		application->AddCommand(std::make_shared<Command::StopCommand>(server, threadSystem));
 		m_Applications.Add(application);
 	}
 
-	void Server::LoadApplication(const std::filesystem::path &path)
+	void ApplicationManager::LoadApplication(const std::filesystem::path &path)
 	{
 		std::string absolutePath = std::filesystem::absolute(path).string();
 		std::string moduleName = path.filename().string();
@@ -128,18 +95,16 @@ namespace Nectere
 		}
 	}
 
-	void Server::Update()
+	TaskResult ApplicationManager::Update()
 	{
-		if (!m_Closed.load() && !m_IsClosing.load())
-		{
-			for (const auto &application : m_Applications.GetElements())
-				application->Update();
-			boost::asio::post(m_IOContext, [this]() { Update(); });
-		}
+		for (const auto &application : m_Applications.GetElements())
+			application->Update();
+		return TaskResult::NEED_UPDATE;
 	}
 
-	void Server::LoadApplications()
+	void ApplicationManager::LoadApplications(Network::AServer *server, ThreadSystem *threadSystem)
 	{
+		GenerateNectereApplication(server, threadSystem);
 		try
 		{
 			for (const auto &entry : std::filesystem::directory_iterator("plugins"))
@@ -147,34 +112,8 @@ namespace Nectere
 				if (!entry.is_directory())
 					LoadApplication(entry.path());
 			}
+			threadSystem->AddTask(this, &ApplicationManager::Update);
 		}
 		catch (const std::exception &) {}
-	}
-
-	void Server::Send(uint16_t sessionID, const Event &event)
-	{
-		if (const std::shared_ptr<Session> &session = m_Sessions.Get(sessionID))
-			session->Send(event);
-	}
-
-	void Server::Start()
-	{
-		boost::asio::post(m_IOContext, [this]() { Update(); });
-		m_IOContext.run();
-	}
-
-	void Server::Stop()
-	{
-		if (!m_Closed.load())
-		{
-			boost::asio::post(m_IOContext, [this]() {
-				LOG(LogType::Standard, "Closing server");
-				m_IsClosing.store(true);
-				for (const auto &session : m_Sessions.GetElements())
-					session->Close();
-				m_IOContext.stop();
-				m_Closed.store(true);
-			});
-		}
 	}
 }
