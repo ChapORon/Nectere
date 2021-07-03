@@ -72,7 +72,7 @@ namespace Nectere
 			FD_ZERO(&m_FdWrite);
 			FD_SET(0, &m_FdRead);
 			FD_SET(m_ListenSocket, &m_FdRead);
-			for (const auto &session : m_Sessions)
+			for (Windows_Session *session : m_Sessions)
 			{
 				int sessionSocket = session->GetSocket();
 				FD_SET(sessionSocket, &m_FdRead);
@@ -82,12 +82,12 @@ namespace Nectere
 			if (ret < 0)
 			{
 				LOG(LogType::Error, "Error on select: ", WSAGetLastError());
-				return TaskResult::FAIL;
+				return TaskResult::Fail;
 			}
 			else if (ret == 0)
 			{
 				LOG(LogType::Warning, "No network activity in the last ", m_Timeout.tv_sec, '.', m_Timeout.tv_usec, " seconds");
-				return TaskResult::NEED_UPDATE;
+				return TaskResult::NeedUpdate;
 			}
 			if (FD_ISSET(m_ListenSocket, &m_FdRead))
 			{
@@ -100,17 +100,17 @@ namespace Nectere
 				{
 					LOG(LogType::Error, "Error while accepting new connection: ", WSAGetLastError());
 					Close();
-					return TaskResult::FAIL;
+					return TaskResult::Fail;
 				}
 			}
 			for (const auto &session : m_Sessions)
 			{
 				if (FD_ISSET(session->GetSocket(), &m_FdRead))
-					m_ThreadSystem->AddTask(session, &Session::Read);
+					m_ThreadSystem->AddTask(session, &Windows_Session::Read);
 				if (FD_ISSET(session->GetSocket(), &m_FdWrite))
-					m_ThreadSystem->AddTask(session, &Session::Write);
+					m_ThreadSystem->AddTask(session, &Windows_Session::Write);
 			}
-			return TaskResult::NEED_UPDATE;
+			return TaskResult::NeedUpdate;
 		}
 
 		void Windows_Server::Close()
@@ -124,6 +124,10 @@ namespace Nectere
 				WSACleanup();
 				m_WinSockStarted = false;
 			}
+
+			for (Windows_Session *session : m_Sessions)
+				delete(session);
+			m_Sessions.clear();
 		}
 	}
 }

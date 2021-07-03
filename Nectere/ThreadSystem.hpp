@@ -42,8 +42,6 @@ namespace Nectere
 		void AllocateThread(const std::function<TaskResult(int)> &);
 		template <typename t_Object>
 		void AddTask(t_Object *obj, TaskResult(t_Object:: *fct)()) { AddTask<FunctorTask<t_Object>>(obj, fct); }
-		template <typename t_Object>
-		void AddTask(const std::shared_ptr<t_Object> &obj, TaskResult(t_Object:: *fct)()) { AddTask<FunctorTask<t_Object>>(obj, fct); }
 		template <typename t_Task, typename ...t_Arg>
 		void AddTask(t_Arg&&... args) { AddTask(new t_Task(args...)); }
 		void AddTask(const std::function<TaskResult()> &taskToAdd) { AddTask<CallableTask>(taskToAdd); }

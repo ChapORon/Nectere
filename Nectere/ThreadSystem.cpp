@@ -10,7 +10,7 @@ namespace Nectere
 	TaskResult ThreadSystem::TaskThreadLoop(int id)
 	{
 		if (!m_Running.load())
-			return TaskResult::FAIL;
+			return TaskResult::Fail;
 		LOG(LogType::Verbose, "[Thread ", id, "] Waiting to start tasks");
 		Task *task;
 		{
@@ -23,13 +23,13 @@ namespace Nectere
 				m_Tasks.pop();
 			}
 			else
-				return TaskResult::FAIL;
+				return TaskResult::Fail;
 		}
-		if (task->Update() == TaskResult::NEED_UPDATE)
+		if (task->Update() == TaskResult::NeedUpdate)
 			AddTask(task);
 		else
 			delete(task);
-		return TaskResult::NEED_UPDATE;
+		return TaskResult::NeedUpdate;
 	}
 
 	TaskResult ThreadSystem::ShedulerThreadLoop(int id)
@@ -40,7 +40,7 @@ namespace Nectere
 		{
 
 		}
-		return TaskResult::NEED_UPDATE;
+		return TaskResult::NeedUpdate;
 	}
 
 	void ThreadSystem::AllocateThread(const std::function<TaskResult(int)> &callback)
@@ -77,7 +77,8 @@ namespace Nectere
 	{
 		if (std::this_thread::get_id() == m_CreatorThreadID)
 		{
-			m_ThreadsCondition.wait(std::unique_lock<std::mutex>(m_ThreadsMutex), [=] { return !m_Running.load(); });
+			std::unique_lock<std::mutex> lock(m_ThreadsMutex);
+			m_ThreadsCondition.wait(lock, [=] { return !m_Running.load(); });
 			Clean();
 		}
 		else

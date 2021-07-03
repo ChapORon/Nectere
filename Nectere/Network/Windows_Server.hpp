@@ -26,7 +26,7 @@ namespace Nectere
 			struct timeval m_Timeout;
 			SOCKET m_ListenSocket = INVALID_SOCKET;
 			bool m_WinSockStarted;
-			std::vector<std::shared_ptr<Session>> m_Sessions;
+			std::vector<Windows_Session *> m_Sessions;
 
 		private:
 			Nectere::TaskResult AcceptConnection();

@@ -15,7 +15,7 @@ namespace Nectere
 	namespace Network
 	{
 		class IEventReceiver;
-		class Session
+		class Windows_Session
 		{
 		private:
 			struct Header
@@ -40,14 +40,14 @@ namespace Nectere
 			Nectere::TaskResult Write(const Nectere::Event &);
 
 		public:
-			Session(unsigned int, IEventReceiver *, const SOCKET &);
+			Windows_Session(unsigned int, IEventReceiver *, const SOCKET &);
 			SOCKET GetSocket() { return m_Socket; }
 			void Send(const Nectere::Event &);
 			void Clean();
 			void Close();
 			Nectere::TaskResult Read();
 			Nectere::TaskResult Write();
-			~Session() { Close(); }
+			~Windows_Session() { Close(); }
 		};
 	}
 }

@@ -26,7 +26,7 @@ namespace Nectere
 			template <typename t_TypeToMutate>
 			bool InternalMutate(size_t parameter, t_TypeToMutate &&value)
 			{
-				if (m_LastParameters[parameter].GetParameterType() == Parameter::Type::MUTABLE)
+				if (m_LastParameters[parameter].GetParameterType() == Parameter::Type::Mutable)
 					return m_NativeUtils.Fill(m_Native, m_LastVariables[parameter], value);
 				return true;
 			}
@@ -131,7 +131,7 @@ namespace Nectere
 			{
 				if (m_LastVariables.size() <= parameter || !m_Native)
 					return false;
-				if (m_LastParameters[parameter].GetParameterType() == Parameter::Type::MUTABLE)
+				if (m_LastParameters[parameter].GetParameterType() == Parameter::Type::Mutable)
 					return m_NativeUtils.Fill(m_Native, m_LastVariables[parameter], value);
 				return false;
 			}

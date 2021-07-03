@@ -4,7 +4,7 @@ set(NAME NectereClient)
 
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
-find_package(Boost 1.75.0 REQUIRED system regex)
+find_package(Boost 1.76.0 REQUIRED system regex)
 
 if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS}) 

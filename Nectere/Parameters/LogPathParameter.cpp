@@ -17,7 +17,7 @@ namespace Nectere
 
 		std::string LogPathParameter::GetDescription() const { return "--log-path=[path]\t\tSpecify where to output log file. Setting this will automatically enable log file."; }
 
-		LogPathParameter::LogPathParameter(const std::shared_ptr<LogInFileParameter> &logInFile):
+		LogPathParameter::LogPathParameter(LogInFileParameter *logInFile):
 			Configuration::ATypedParameter<std::string>("LogPath", "log.filepath"), m_LogInFile(logInFile)
 		{
 			AddRestriction("log-path", PARG_DOUBLE_DASH_RESTRICTION, PARG_NEED_VALUE);

@@ -93,12 +93,13 @@ namespace Nectere
 		static bool ms_ShouldStartServer;
 		static std::string ms_ConfigurationFilePath;
 		static std::unordered_map<std::string, std::string> ms_ArgumentToParameter;
-		static std::unordered_map<std::string, std::shared_ptr<AParameter>> ms_Parameters;
+		static std::unordered_map<std::string, AParameter *> ms_Parameters;
 
 	private:
 		static void Callback(const char *, const char *, int);
 		static void Help(const char *, const char *, int);
 		static void ConfigFile(const char *, const char *, int);
+		static void AddParameter(AParameter *);
 
 	public:
 		template <typename t_ParameterType>
@@ -106,18 +107,23 @@ namespace Nectere
 		{
 			auto it = ms_Parameters.find(parameter);
 			if (it != ms_Parameters.end())
-				return std::dynamic_pointer_cast<ATypedParameter<t_ParameterType>>((*it).second)->GetValue() == value;
+				return dynamic_cast<ATypedParameter<t_ParameterType> *>((*it).second)->GetValue() == value;
 			return false;
 		}
 
 		template <typename t_ParameterType>
 		static const t_ParameterType &Get(const std::string &parameter)
 		{
-			return std::dynamic_pointer_cast<ATypedParameter<t_ParameterType>>(ms_Parameters[parameter])->GetValue();
+			return dynamic_cast<ATypedParameter<t_ParameterType> *>(ms_Parameters[parameter])->GetValue();
 		}
 
+		static AParameter *Fetch(const std::string &);
+
+		template <typename t_ParameterType, typename ...t_Arg>
+		static void Add(t_Arg&&... args) { AddParameter(new t_ParameterType(args...)); }
+
 		static bool Have(const std::string &parameter);
-		static void Add(const std::shared_ptr<AParameter> &);
 		static bool LoadConfiguration(int argc, char **arg);
+		static void Clear();
 	};
 }

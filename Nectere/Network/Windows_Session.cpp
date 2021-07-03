@@ -9,7 +9,7 @@ namespace Nectere
 {
 	namespace Network
 	{
-		Session::Session(unsigned int id, IEventReceiver *handler, const SOCKET &socket) :
+		Windows_Session::Windows_Session(unsigned int id, IEventReceiver *handler, const SOCKET &socket) :
 			m_ID(id),
 			m_Handler(handler),
 			m_Socket(socket),
@@ -24,7 +24,7 @@ namespace Nectere
 			}
 		}
 
-		Nectere::TaskResult Session::ReadHeader(Header &header)
+		Nectere::TaskResult Windows_Session::ReadHeader(Header &header)
 		{
 			char *data = new char[sizeof(Header)];
 			int readLength = ::recv(m_Socket, data, sizeof(Header), 0);
@@ -33,37 +33,37 @@ namespace Nectere
 				LOG(LogType::Verbose, '[', m_ID, "] Decoding header");
 				std::memcpy(&header, data, sizeof(Header));
 				delete[](data);
-				return TaskResult::SUCCESS;
+				return TaskResult::Success;
 			}
 			else if (readLength > 0)
 			{
 				LOG(LogType::Verbose, '[', m_ID, "] Misformatted header: Header is smaller than ", sizeof(Header), " bytes");
 				Send(Event{ 0, NECTERE_EVENT_MISFORMATTED, "Header is smaller than " + std::to_string(sizeof(Header)) + " bytes" });
 				delete[](data);
-				return TaskResult::NEED_UPDATE;
+				return TaskResult::NeedUpdate;
 			}
 			else if (readLength == WSAEWOULDBLOCK)
 			{
 				delete[](data);
-				return TaskResult::NEED_UPDATE;
+				return TaskResult::NeedUpdate;
 			}
 			else if (readLength == 0)
 			{
 				LOG(LogType::Verbose, '[', m_ID, "] Connection closed by client");
 				Clean();
 				delete[](data);
-				return TaskResult::FAIL;
+				return TaskResult::Fail;
 			}
 			else
 			{
 				LOG(LogType::Error, "Cannot read event header for session ", m_ID, ": ", WSAGetLastError());
 				Clean();
 				delete[](data);
-				return TaskResult::FAIL;
+				return TaskResult::Fail;
 			}
 		}
 
-		Nectere::TaskResult Session::ReadMessage(const Header &header)
+		Nectere::TaskResult Windows_Session::ReadMessage(const Header &header)
 		{
 			char *data = new char[header.messageLength + 1];
 			LOG(LogType::Verbose, '[', m_ID, "] Header decoded, reading ", header.messageLength, " bytes");
@@ -83,32 +83,32 @@ namespace Nectere
 					Send(Event{ 0, NECTERE_EVENT_MISFORMATTED, "Expecting " + std::to_string(header.messageLength) + " bytes where " + std::to_string(readLength) + " bytes where read" });
 				}
 				delete[](data);
-				return TaskResult::SUCCESS;
+				return TaskResult::Success;
 			}
 			else if (readLength == WSAEWOULDBLOCK)
 			{
 				LOG(LogType::Error, "Cannot read event content for session ", m_ID, ": No content to read when ", header.messageLength, " bytes are expected");
 				delete[](data);
 				Send(Event{ 0, NECTERE_EVENT_MISFORMATTED, "No content to read when " + std::to_string(header.messageLength) + " bytes are expected" });
-				return TaskResult::NEED_UPDATE;
+				return TaskResult::NeedUpdate;
 			}
 			else if (readLength == 0)
 			{
 				LOG(LogType::Verbose, '[', m_ID, "] Connection closed by client");
 				Clean();
 				delete[](data);
-				return TaskResult::FAIL;
+				return TaskResult::Fail;
 			}
 			else
 			{
 				LOG(LogType::Error, "Cannot read event content for session ", m_ID, ": ", WSAGetLastError());
 				Clean();
 				delete[](data);
-				return TaskResult::FAIL;
+				return TaskResult::Fail;
 			}
 		}
 
-		Nectere::TaskResult Session::Write(const Nectere::Event &event)
+		Nectere::TaskResult Windows_Session::Write(const Nectere::Event &event)
 		{
 			Header header;
 			header.applicationID = event.m_ApplicationID;
@@ -124,24 +124,24 @@ namespace Nectere
 			{
 				Clean();
 				delete[](data);
-				return TaskResult::FAIL;
+				return TaskResult::Fail;
 			}
 			delete[](data);
-			return TaskResult::SUCCESS;
+			return TaskResult::Success;
 		}
 
-		Nectere::TaskResult Session::Read()
+		Nectere::TaskResult Windows_Session::Read()
 		{
 			if (m_Closed.load())
-				return TaskResult::FAIL;
+				return TaskResult::Fail;
 			Header header;
 			switch (ReadHeader(header))
 			{
-			case TaskResult::FAIL:
-				return TaskResult::FAIL;
-			case TaskResult::NEED_UPDATE:
-				return TaskResult::NEED_UPDATE;
-			case TaskResult::SUCCESS:
+			case TaskResult::Fail:
+				return TaskResult::Fail;
+			case TaskResult::NeedUpdate:
+				return TaskResult::NeedUpdate;
+			case TaskResult::Success:
 			{
 				if (header.messageLength == 0)
 				{
@@ -153,24 +153,24 @@ namespace Nectere
 				{
 					switch (ReadMessage(header))
 					{
-					case TaskResult::FAIL:
-					case TaskResult::NEED_UPDATE:
-						return TaskResult::FAIL;
-					case TaskResult::SUCCESS:
-						return TaskResult::SUCCESS;
+					case TaskResult::Fail:
+					case TaskResult::NeedUpdate:
+						return TaskResult::Fail;
+					case TaskResult::Success:
+						return TaskResult::Success;
 					}
 				}
 			}
 			}
-			return TaskResult::FAIL;
+			return TaskResult::Fail;
 		}
 
-		Nectere::TaskResult Session::Write()
+		Nectere::TaskResult Windows_Session::Write()
 		{
 			if (m_Closed.load())
-				return TaskResult::FAIL;
+				return TaskResult::Fail;
 			if (m_SendBuffer.empty())
-				return TaskResult::NEED_UPDATE;
+				return TaskResult::NeedUpdate;
 			Nectere::Event msg;
 			{
 				std::unique_lock<std::mutex> lock(m_SendBufferMutex);
@@ -180,13 +180,13 @@ namespace Nectere
 			return Write(msg);
 		}
 
-		void Session::Send(const Nectere::Event &str)
+		void Windows_Session::Send(const Nectere::Event &str)
 		{
 			std::unique_lock<std::mutex> lock(m_SendBufferMutex);
 			m_SendBuffer.push(str);
 		}
 
-		void Session::Clean()
+		void Windows_Session::Clean()
 		{
 			if (!m_Closed.load())
 			{
@@ -196,7 +196,7 @@ namespace Nectere
 			}
 		}
 
-		void Session::Close()
+		void Windows_Session::Close()
 		{
 			if (!m_Closed.load())
 			{

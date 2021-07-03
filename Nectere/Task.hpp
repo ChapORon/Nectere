@@ -12,11 +12,11 @@ namespace Nectere
 	private:
 		enum class ETaskStep
 		{
-			NONE,
-			START,
-			UPDATE,
-			CANCEL,
-			FINISHED
+			None,
+			Start,
+			Update,
+			Cancel,
+			Finished
 		};
 
 	private:
@@ -61,17 +61,16 @@ namespace Nectere
 	class FunctorTask final : public Task
 	{
 	private:
-		std::shared_ptr<t_Object> m_Obj;
+		t_Object *m_Obj;
 		TaskResult(t_Object:: *m_Function)();
 
 	public:
-		FunctorTask(t_Object *obj, TaskResult(t_Object::*fct)()) : Task(), m_Obj(obj, [](t_Object*){}), m_Function(fct) {}
-		FunctorTask(const std::shared_ptr<t_Object> &obj, TaskResult(t_Object:: *fct)()) : Task(), m_Obj(obj), m_Function(fct) {}
+		FunctorTask(t_Object *obj, TaskResult(t_Object::*fct)()) : Task(), m_Obj(obj), m_Function(fct) {}
 		TaskResult OnUpdate() override
 		{
 			if (m_Obj != nullptr && m_Function != nullptr)
-				return (m_Obj.get()->*m_Function)();
-			return TaskResult::FAIL;
+				return (m_Obj->*m_Function)();
+			return TaskResult::Fail;
 		}
 	};
 }

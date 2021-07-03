@@ -399,7 +399,9 @@ namespace Nectere
 			fileStream.read(buffer, nbChar);
 			buffer[nbChar] = '\0';
 			std::string content(buffer);
-			return LoadFromContent(content);
+			Node ret = LoadFromContent(content);
+			delete[](buffer);
+			return ret;
 		}
 
 		Node Json::LoadFromStream(std::istream &stream)

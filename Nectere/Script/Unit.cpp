@@ -394,7 +394,7 @@ namespace Nectere
 		bool Unit::Have(const std::string &key)
 		{
 			if (m_Error)
-				return nullptr;
+				return false;
 			if (m_IsConst)
 				return c_Have(key);
 			Build();

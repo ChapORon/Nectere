@@ -2,14 +2,13 @@
 
 set(NAME Nectere)
 
-
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG=1")
 
 include_directories(.)
 	
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
-find_package(Boost 1.75.0 REQUIRED system regex date_time)
+find_package(Boost 1.76.0 REQUIRED system regex date_time)
 
 set(DP_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/Dp/Format.hpp
@@ -197,10 +196,11 @@ set(SOURCE_FILES
 set_source_files_properties(${PARG_SOURCES} PROPERTIES LANGUAGE CXX)
 
 add_executable(${NAME} ${SOURCE_FILES})
+add_library(${NAME}-s STATIC ${SOURCE_FILES})
 
 if (Boost_FOUND)
 	add_definitions(-DUSE_BOOST)
-    include_directories(${Boost_INCLUDE_DIRS}) 
+    include_directories(${Boost_INCLUDE_DIRS})
     link_directories(${Boost_LIBRARY_DIRS})
     target_link_libraries(${NAME} ${Boost_LIBRARIES})
 endif()

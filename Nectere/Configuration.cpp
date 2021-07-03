@@ -12,7 +12,7 @@ namespace Nectere
 	bool Configuration::ms_ShouldStartServer = true;
 	std::string Configuration::ms_ConfigurationFilePath = "conf.json";
 	std::unordered_map<std::string, std::string> Configuration::ms_ArgumentToParameter;
-	std::unordered_map<std::string, std::shared_ptr<Configuration::AParameter>> Configuration::ms_Parameters;
+	std::unordered_map<std::string, Configuration::AParameter *> Configuration::ms_Parameters;
 
 	bool Configuration::BoolParameter::DefaultValue() const { return m_DefaultValue; }
 	bool Configuration::BoolParameter::Parse() const { return true; }
@@ -66,12 +66,17 @@ namespace Nectere
 		}
 	}
 
+	Configuration::AParameter *Configuration::Fetch(const std::string &parameter)
+	{
+		return ms_Parameters[parameter];
+	}
+
 	bool Configuration::Have(const std::string &parameter)
 	{
 		return (ms_Parameters.find(parameter) != ms_Parameters.end());
 	}
 
-	void Configuration::Add(const std::shared_ptr<AParameter> &parameter)
+	void Configuration::AddParameter(AParameter *parameter)
 	{
 		if (parameter != nullptr)
 		{
@@ -108,6 +113,12 @@ namespace Nectere
 		if (ms_ShouldStartServer)
 			Script::CodingStyle::Init();
 		return ms_ShouldStartServer;
+	}
+
+	void Configuration::Clear()
+	{
+		for (const auto &pair : ms_Parameters)
+			delete(pair.second);
 	}
 
 	void Configuration::Callback(const char *name, const char *value, int)

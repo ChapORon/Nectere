@@ -93,7 +93,7 @@ namespace Nectere
 
 		bool Taggable::RemoveTag(const std::string &tagName)
 		{
-			auto &it = m_Tags.find(tagName);
+			auto it = m_Tags.find(tagName);
 			if (it == m_Tags.end())
 				return false;
 			m_Tags.erase(it);

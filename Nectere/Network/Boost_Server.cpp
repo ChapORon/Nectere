@@ -26,7 +26,7 @@ namespace Nectere
 			m_Acceptor.async_accept([this](boost::system::error_code ec, boost::asio::ip::tcp::socket socket) {
 				if (!ec)
 				{
-					auto session = std::make_shared<Boost_Session>(m_SessionIDGenerator.GenerateID(), m_IOContext, std::move(socket), m_EventReceiver);
+					Boost_Session *session = new Boost_Session(m_SessionIDGenerator.GenerateID(), m_IOContext, std::move(socket), m_EventReceiver);
 					LOG(LogType::Standard, "New session opened with ID: ", session->GetID());
 					m_Sessions.Add(session);
 				}
@@ -36,7 +36,7 @@ namespace Nectere
 
 		void Boost_Server::Send(uint16_t sessionID, const Event &event)
 		{
-			if (const std::shared_ptr<Boost_Session> &session = m_Sessions.Get(sessionID))
+			if (Boost_Session *session = m_Sessions.Get(sessionID))
 				session->Send(event);
 		}
 
@@ -47,7 +47,7 @@ namespace Nectere
 				AcceptSession();
 				m_IOContext.run();
 				LOG(LogType::Standard, "Network stopped");
-				return TaskResult::SUCCESS;
+				return TaskResult::Success;
 			});
 			return true;
 		}

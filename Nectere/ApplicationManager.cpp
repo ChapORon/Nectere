@@ -5,15 +5,15 @@
 #include "Logger.hpp"
 #include "ThreadSystem.hpp"
 
-typedef std::string FUNCTION(ApplicationName)();
-typedef void FUNCTION(ApplicationLoader)(const std::shared_ptr<Nectere::Application> &);
+typedef const char *FUNCTION(ApplicationName)();
+typedef void FUNCTION(ApplicationLoader)(Nectere::Application *);
 
 namespace Nectere
 {
 	void ApplicationManager::OnReceive(uint16_t sessionId, const Event &message)
 	{
 		LOG(LogType::Verbose, "Server created on port ", Configuration::Get<int>("Network.Port"));
-		if (const std::shared_ptr<Application> &application = m_Applications.Get(message.m_ApplicationID))
+		if (Application *application = m_Applications.Get(message.m_ApplicationID))
 		{
 			LOG(LogType::Verbose, "Checking if application \"", application->GetName(), "\" can receive and treat event with code ", message.m_EventCode);
 			if (application->IsEventAllowed(message))
@@ -26,8 +26,8 @@ namespace Nectere
 
 	void ApplicationManager::GenerateNectereApplication(Network::AServer *server, ThreadSystem *threadSystem)
 	{
-		std::shared_ptr<Application> application = std::make_shared<Application>(m_ApplicationIDGenerator.GenerateID(), "Nectere");
-		application->AddCommand(std::make_shared<Command::StopCommand>(server, threadSystem));
+		Application *application = new Application(m_ApplicationIDGenerator.GenerateID(), "Nectere");
+		application->AddCommand(new Command::StopCommand(server, threadSystem));
 		m_Applications.Add(application);
 	}
 
@@ -38,7 +38,7 @@ namespace Nectere
 		auto lib = m_LoadedLibrary.find(absolutePath);
 		if (lib == m_LoadedLibrary.end())
 		{
-			std::shared_ptr<DynamicLibrary> dynamicLibrary = std::make_shared<DynamicLibrary>(absolutePath);
+			DynamicLibrary *dynamicLibrary = new DynamicLibrary(absolutePath);
 			if (!dynamicLibrary)
 				return;
 			LOG(LogType::Standard, moduleName, ": Module loaded");
@@ -53,7 +53,7 @@ namespace Nectere
 			if (!applicationLoader)
 				return;
 			LOG(LogType::Standard, moduleName, ": Loading application");
-			std::shared_ptr<Application> application = std::make_shared<Application>(m_ApplicationIDGenerator.GenerateID(), name);
+			Application *application = new Application(m_ApplicationIDGenerator.GenerateID(), name);
 			applicationLoader(application);
 			m_LoadedLibrary[dynamicLibrary->GetPath()] = std::make_pair(dynamicLibrary, application);
 			m_Applications.Add(application);
@@ -61,8 +61,8 @@ namespace Nectere
 		}
 		else
 		{
-			std::shared_ptr<DynamicLibrary> dynamicLibrary = (*lib).second.first;
-			std::shared_ptr<Application> application = (*lib).second.second;
+			DynamicLibrary *dynamicLibrary = (*lib).second.first;
+			Application *application = (*lib).second.second;
 			if (dynamicLibrary->CanReload())
 			{
 				dynamicLibrary->Reload();
@@ -99,7 +99,7 @@ namespace Nectere
 	{
 		for (const auto &application : m_Applications.GetElements())
 			application->Update();
-		return TaskResult::NEED_UPDATE;
+		return TaskResult::NeedUpdate;
 	}
 
 	void ApplicationManager::LoadApplications(Network::AServer *server, ThreadSystem *threadSystem)
@@ -115,5 +115,11 @@ namespace Nectere
 			threadSystem->AddTask(this, &ApplicationManager::Update);
 		}
 		catch (const std::exception &) {}
+	}
+
+	ApplicationManager::~ApplicationManager()
+	{
+		for (const auto &pair : m_LoadedLibrary)
+			delete(pair.second.first);
 	}
 }

@@ -7,7 +7,7 @@ namespace Nectere
 		class LogPathParameter final : public Configuration::ATypedParameter<std::string>
 		{
 		private:
-			std::shared_ptr<LogInFileParameter> m_LogInFile;
+			LogInFileParameter *m_LogInFile;
 
 		private:
 			std::string DefaultValue() const override;
@@ -15,7 +15,7 @@ namespace Nectere
 			std::string GetDescription() const override;
 
 		public:
-			LogPathParameter(const std::shared_ptr<LogInFileParameter> &);
+			LogPathParameter(LogInFileParameter *);
 		};
 	}
 }

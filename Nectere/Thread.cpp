@@ -4,7 +4,7 @@
 
 namespace Nectere
 {
-	Thread::Thread(int id) : m_ID(id), m_Running(false), m_Stopping(false), m_Stopped(false), m_Function([](int) {return TaskResult::NEED_UPDATE; }) {}
+	Thread::Thread(int id) : m_ID(id), m_Running(false), m_Stopping(false), m_Stopped(false), m_Function([](int) {return TaskResult::NeedUpdate; }) {}
 	Thread::Thread(int id, const std::function<TaskResult(int)> &fct): m_ID(id), m_Running(false), m_Stopping(false), m_Stopped(false), m_Function(fct) {}
 
 	void Thread::Loop()
@@ -13,8 +13,8 @@ namespace Nectere
 		{
 			switch (m_Function(m_ID))
 			{
-			case TaskResult::FAIL:
-			case TaskResult::SUCCESS:
+			case TaskResult::Fail:
+			case TaskResult::Success:
 				return;
 			}
 			std::this_thread::yield();

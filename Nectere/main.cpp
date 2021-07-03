@@ -17,19 +17,18 @@ namespace Nectere
 	static void Init()
 	{
 		//Log
-		Configuration::Add(std::make_shared<Parameters::VerboseParameter>());
-		std::shared_ptr<Parameters::LogInFileParameter> logFile = std::make_shared<Parameters::LogInFileParameter>();
-		Configuration::Add(logFile);
-		Configuration::Add(std::make_shared<Parameters::LogPathParameter>(logFile));
+		Configuration::Add<Parameters::VerboseParameter>();
+		Configuration::Add<Parameters::LogInFileParameter>();
+		Configuration::Add<Parameters::LogPathParameter>(dynamic_cast<Parameters::LogInFileParameter *>(Configuration::Fetch("LogInFile")));
 
 		//Network
-		Configuration::Add(std::make_shared<Parameters::NetworkPortParameter>());
+		Configuration::Add<Parameters::NetworkPortParameter>();
 
 		//Script Engine
-		Configuration::Add(std::make_shared<Configuration::BoolParameter>("ScriptEngine.DoSmartBuild", true));
-		Configuration::Add(std::make_shared<Configuration::BoolParameter>("ScriptEngine.DoCodingStyle", false));
-		Configuration::Add(std::make_shared<Configuration::BoolParameter>("ScriptEngine.DisplayName", false));
-		Configuration::Add(std::make_shared<Configuration::BoolParameter>("ScriptEngine.DisplayTag", false));
+		Configuration::Add<Configuration::BoolParameter>("ScriptEngine.DoSmartBuild", true);
+		Configuration::Add<Configuration::BoolParameter>("ScriptEngine.DoCodingStyle", false);
+		Configuration::Add<Configuration::BoolParameter>("ScriptEngine.DisplayName", false);
+		Configuration::Add<Configuration::BoolParameter>("ScriptEngine.DisplayTag", false);
 	}
 }
 
@@ -95,6 +94,7 @@ int main(int argc, char **argv)
 			}
 		}
 		delete(g_threadSystem);
+		Nectere::Configuration::Clear();
 		return 0;
 	}
 	return 1;

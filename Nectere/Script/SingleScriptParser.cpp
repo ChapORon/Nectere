@@ -337,7 +337,7 @@ namespace Nectere
 					{
 						size_t tagSize = 1;
 						if (!TreatTags(subValue, tagSize, tags))
-							return false;
+							return nullptr;
 						subValue = subValue.substr(tagSize);
 					}
 					std::string subValueTypeAndName;

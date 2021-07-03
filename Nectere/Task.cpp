@@ -4,13 +4,13 @@ namespace Nectere
 {
 	Task::Task():
 		m_UpdateOnStart(false),
-		m_InternalStep(ETaskStep::NONE),
+		m_InternalStep(ETaskStep::None),
 		m_NeedCancel(false),
 		m_Finished(false) {}
 
 	Task::Task(bool updateOnStart):
 		m_UpdateOnStart(updateOnStart),
-		m_InternalStep(ETaskStep::NONE),
+		m_InternalStep(ETaskStep::None),
 		m_NeedCancel(false),
 		m_Finished(false) {}
 
@@ -19,36 +19,36 @@ namespace Nectere
 		ComputeTaskState();
 		switch (m_InternalStep)
 		{
-		case ETaskStep::CANCEL:
+		case ETaskStep::Cancel:
 		{
 			OnTaskCanceled();
 			EndTask();
-			return TaskResult::FAIL;
+			return TaskResult::Fail;
 		}
-		case ETaskStep::START:
+		case ETaskStep::Start:
 		{
 			OnTaskStart();
 			if (!m_UpdateOnStart)
-				return TaskResult::NEED_UPDATE;
+				return TaskResult::NeedUpdate;
 			[[fallthrough]];
 		}
-		case ETaskStep::UPDATE:
+		case ETaskStep::Update:
 			return UpdateTask();
 		default:
-			return TaskResult::FAIL;
+			return TaskResult::Fail;
 		}
 	}
 
 	void Task::ComputeTaskState()
 	{
-		if (m_InternalStep != ETaskStep::FINISHED)
+		if (m_InternalStep != ETaskStep::Finished)
 		{
 			if (m_NeedCancel.load())
-				m_InternalStep = ETaskStep::CANCEL;
-			else if (m_InternalStep == ETaskStep::NONE)
-				m_InternalStep = ETaskStep::START;
+				m_InternalStep = ETaskStep::Cancel;
+			else if (m_InternalStep == ETaskStep::None)
+				m_InternalStep = ETaskStep::Start;
 			else
-				m_InternalStep = ETaskStep::UPDATE;
+				m_InternalStep = ETaskStep::Update;
 		}
 	}
 
@@ -57,19 +57,19 @@ namespace Nectere
 		TaskResult result = OnUpdate();
 		switch (result)
 		{
-		case TaskResult::SUCCESS:
+		case TaskResult::Success:
 		{
 			OnTaskSuccess();
 			EndTask();
 			break;
 		}
-		case TaskResult::FAIL:
+		case TaskResult::Fail:
 		{
 			OnTaskFail();
 			EndTask();
 			break;
 		}
-		case TaskResult::NEED_UPDATE:
+		case TaskResult::NeedUpdate:
 			break;
 		}
 		return result;
@@ -78,14 +78,15 @@ namespace Nectere
 	void Task::EndTask()
 	{
 		OnTaskEnd();
-		m_InternalStep = ETaskStep::FINISHED;
+		m_InternalStep = ETaskStep::Finished;
 		m_Finished.store(true);
 		m_TaskCondition.notify_all();
 	}
 
 	void Task::Await()
 	{
-		m_TaskCondition.wait(std::unique_lock<std::mutex>(m_TaskMutex), [=] { return m_Finished.load(); });
+		std::unique_lock<std::mutex> lock(m_TaskMutex);
+		m_TaskCondition.wait(lock, [=] { return m_Finished.load(); });
 	}
 
 	void Task::Cancel()
@@ -95,7 +96,7 @@ namespace Nectere
 
 	Task::~Task()
 	{
-		if (m_InternalStep != ETaskStep::FINISHED && m_InternalStep != ETaskStep::NONE)
+		if (m_InternalStep != ETaskStep::Finished && m_InternalStep != ETaskStep::None)
 		{
 			OnTaskCanceled();
 			EndTask();

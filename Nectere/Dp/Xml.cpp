@@ -521,6 +521,7 @@ namespace Nectere
 			buffer[nbChar] = '\0';
 			std::string content(buffer);
 			Node node = LoadFromContent(content);
+			delete[](buffer);
 			if (node != Node::null && node.GetNode("__xmldeclarations__.xml") == Node::null)
 				return Node::null;
 			return node;

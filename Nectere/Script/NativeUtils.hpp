@@ -62,7 +62,7 @@ namespace Nectere
 			template <typename t_CallableReturnType>
 			bool RegisterCallable(Native *native, const std::string &signature, const t_CallableReturnType &(*function)(CallStack &), const std::vector<Tag> &tags)
 			{
-				Callable *newCallable = new NativeFunction::DeclaredObjectFunction(native->m_helper, native, function);
+				Callable *newCallable = new NativeFunction::DeclaredObjectFunction(native->m_Helper, native, function);
 				size_t hash = typeid(t_CallableReturnType).hash_code();
 				if (m_UnInitializedCallable.find(hash) == m_UnInitializedCallable.end())
 					m_UnInitializedCallable[hash] = std::vector<Callable *>();
@@ -73,7 +73,7 @@ namespace Nectere
 			template <typename t_CallableReturnType>
 			bool RegisterCallable(Native *native, const std::string &signature, t_CallableReturnType &(*function)(CallStack &), const std::vector<Tag> &tags)
 			{
-				Callable *newCallable = new NativeFunction::DeclaredObjectFunction(native->m_helper, native, function);
+				Callable *newCallable = new NativeFunction::DeclaredObjectFunction(native->m_Helper, native, function);
 				size_t hash = typeid(t_CallableReturnType).hash_code();
 				if (m_UnInitializedCallable.find(hash) == m_UnInitializedCallable.end())
 					m_UnInitializedCallable[hash] = std::vector<Callable *>();
@@ -84,7 +84,7 @@ namespace Nectere
 			template <typename t_CallableReturnType>
 			bool RegisterCallable(Native *native, const std::string &signature, t_CallableReturnType(*function)(CallStack &), const std::vector<Tag> &tags)
 			{
-				Callable *newCallable = new NativeFunction::DeclaredObjectFunction(native->m_helper, native, function);
+				Callable *newCallable = new NativeFunction::DeclaredObjectFunction(native->m_Helper, native, function);
 				size_t hash = typeid(t_CallableReturnType).hash_code();
 				if (m_UnInitializedCallable.find(hash) == m_UnInitializedCallable.end())
 					m_UnInitializedCallable[hash] = std::vector<Callable *>();
@@ -95,16 +95,16 @@ namespace Nectere
 			template <typename t_LinkerType>
 			bool RegisterLinker(Native *native, Linker<t_LinkerType> &linker)
 			{
-				if (!CodingStyle::CheckName(CodingStyle::NameType::DECALRED_OBJECT, linker.m_typeName))
+				if (!CodingStyle::CheckName(CodingStyle::NameType::DeclaredObject, linker.m_TypeName))
 					return false;
 				for (const auto &subType : linker.m_subtypes)
 				{
-					if (!CodingStyle::CheckName(CodingStyle::NameType::VARIABLE, subType.m_name))
+					if (!CodingStyle::CheckName(CodingStyle::NameType::Variable, subType.m_Name))
 						return false;
 				}
-				if (native->m_registeredTypes.find(linker.m_typeName) != native->m_registeredTypes.end())
+				if (native->m_RegisteredTypes.find(linker.m_TypeName) != native->m_RegisteredTypes.end())
 				{
-					LOG_SCRIPT_INIT(LogType::Error, "Linker for ", linker.m_typeName, " already exist");
+					LOG_SCRIPT_INIT(LogType::Error, "Linker for ", linker.m_TypeName, " already exist");
 					return false;
 				}
 				if (LinkerWrapper<t_LinkerType> *wrapper = new LinkerWrapper<t_LinkerType>(linker))
@@ -118,14 +118,14 @@ namespace Nectere
 							for (Callable *callable : (*it).second)
 								dynamic_cast<NativeFunction::DeclaredObjectFunction<t_LinkerType> *>(callable)->SetLinkerWrapper(wrapper);
 						}
-						native->m_serializers[hash] = wrapper;
-						native->m_registeredTypes.insert(linker.m_typeName);
-						LOG_SCRIPT_INIT(LogType::VERBOSE, "Linker for ", linker.m_typeName, " added");
+						native->m_Serializers[hash] = wrapper;
+						native->m_RegisteredTypes.insert(linker.m_TypeName);
+						LOG_SCRIPT_INIT(LogType::Verbose, "Linker for ", linker.m_TypeName, " added");
 						return true;
 					}
 					return false;
 				}
-				LOG_SCRIPT_INIT(LogType::Error, "Cannot create new wrapper for linker of ", linker.m_typeName, ": Out of memory");
+				LOG_SCRIPT_INIT(LogType::Error, "Cannot create new wrapper for linker of ", linker.m_TypeName, ": Out of memory");
 				return false;
 			}
 
@@ -154,7 +154,7 @@ namespace Nectere
 			template <typename t_TypeToConvert>
 			bool AddGlobal(Native *native, const std::string &name, const std::vector<Tag> &tags, const std::vector<t_TypeToConvert> &value)
 			{
-				if (!CodingStyle::CheckName(CodingStyle::NameType::GLOBAL, name))
+				if (!CodingStyle::CheckName(CodingStyle::NameType::Global, name))
 					return false;
 				if (native->m_Globals.find(name) != native->m_Globals.end())
 				{
@@ -176,7 +176,7 @@ namespace Nectere
 			template <typename ...t_Arguments>
 			bool AddGlobal(Native *native, const std::string &name, const std::vector<Tag> &tags, t_Arguments &&...args)
 			{
-				if (!CodingStyle::CheckName(CodingStyle::NameType::GLOBAL, name))
+				if (!CodingStyle::CheckName(CodingStyle::NameType::Global, name))
 					return false;
 				if (native->m_Globals.find(name) != native->m_Globals.end())
 				{
@@ -201,8 +201,8 @@ namespace Nectere
 			VariableType TypeOf(Native *native)
 			{
 				size_t hash = typeid(t_TypeToType).hash_code();
-				auto it = native->m_serializers.find(hash);
-				if (it != native->m_serializers.end())
+				auto it = native->m_Serializers.find(hash);
+				if (it != native->m_Serializers.end())
 				{
 					auto *linker = static_cast<LinkerWrapper<t_TypeToType> *>((*it).second);
 					if (linker)
@@ -216,14 +216,14 @@ namespace Nectere
 			Variable Convert(Native *native, const std::string &name, const t_TypeToConvert &value)
 			{
 				size_t hash = typeid(t_TypeToConvert).hash_code();
-				auto it = native->m_serializers.find(hash);
-				if (it != native->m_serializers.end())
+				auto it = native->m_Serializers.find(hash);
+				if (it != native->m_Serializers.end())
 				{
 					auto *linker = static_cast<LinkerWrapper<t_TypeToConvert> *>((*it).second);
 					if (linker)
 					{
-						LOG_SCRIPT_INIT(LogType::VERBOSE, "Converting declared object");
-						return linker->Convert(name, value, native->m_helper);
+						LOG_SCRIPT_INIT(LogType::Verbose, "Converting declared object");
+						return linker->Convert(name, value, native->m_Helper);
 					}
 				}
 				LOG_SCRIPT_RUNTIME(LogType::Error, "Unknown type: ", typeid(t_TypeToConvert).name());
@@ -250,8 +250,8 @@ namespace Nectere
 			bool Fill(Native *native, const Variable &variable, t_TypeToFill &value)
 			{
 				size_t hash = typeid(t_TypeToFill).hash_code();
-				auto it = native->m_serializers.find(hash);
-				if (it != native->m_serializers.end())
+				auto it = native->m_Serializers.find(hash);
+				if (it != native->m_Serializers.end())
 				{
 					auto *linker = static_cast<LinkerWrapper<t_TypeToFill> *>((*it).second);
 					if (linker)

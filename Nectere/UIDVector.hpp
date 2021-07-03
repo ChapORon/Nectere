@@ -1,19 +1,26 @@
 #pragma once
 
-#include <memory>
 #include <vector>
 
 namespace Nectere
 {
+	//Use interpolation search to sort at insert and find element faster
 	template <typename t_IDType>
 	class UIDVector
 	{
 	private:
-		std::vector<std::shared_ptr<t_IDType>> m_Elements;
+		std::vector<t_IDType *> m_Elements;
+
+	private:
+		void RemoveAt(size_t pos)
+		{
+			delete(m_Elements[pos]);
+			m_Elements.erase(m_Elements.begin() + pos);
+		}
 
 	public:
-		const std::vector<std::shared_ptr<t_IDType>> &GetElements() const { return m_Elements; }
-		bool Add(const std::shared_ptr<t_IDType> &element)
+		const std::vector<t_IDType *> &GetElements() const { return m_Elements; }
+		bool Add(t_IDType *element)
 		{
 			if (element == nullptr)
 				return false;
@@ -85,7 +92,7 @@ namespace Nectere
 			return (id == idOnLeft || id == idOnRight);
 		}
 
-		std::shared_ptr<t_IDType> Get(uint16_t id)
+		t_IDType *Get(uint16_t id)
 		{
 			if (m_Elements.empty())
 				return nullptr;
@@ -141,19 +148,23 @@ namespace Nectere
 				}
 				else
 				{
-					m_Elements.erase(m_Elements.begin() + pos);
+					RemoveAt(pos);
 					return;
 				}
 			}
 			if (id == idOnLeft)
-				m_Elements.erase(m_Elements.begin() + left);
+				RemoveAt(left);
 			else if (id == idOnRight)
-				m_Elements.erase(m_Elements.begin() + right);
+				RemoveAt(right);
 		}
 
 		void Clear()
 		{
+			for (t_IDType *element : m_Elements)
+				delete(element);
 			m_Elements.clear();
 		}
+
+		~UIDVector() { Clear(); }
 	};
 }

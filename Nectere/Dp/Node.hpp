@@ -131,7 +131,7 @@ namespace Nectere
 			template <typename t_TypeToCastTo>
 			explicit operator t_TypeToCastTo() const
 			{
-				return Serializer<t_TypeToCastTo>().FromNode(GetNode(key));
+				return Serializer<t_TypeToCastTo>().FromNode(*this);
 			}
 			explicit operator const std::string &() const
 			{
