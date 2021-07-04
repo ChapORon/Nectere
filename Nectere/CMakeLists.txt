@@ -190,12 +190,12 @@ set(SOURCE_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/Thread.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ThreadSystem.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ThreadSystem.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/UIDVector.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
+	${CMAKE_CURRENT_SOURCE_DIR}/UIDSet.hpp)
 	
 set_source_files_properties(${PARG_SOURCES} PROPERTIES LANGUAGE CXX)
 
-add_executable(${NAME} ${SOURCE_FILES})
+add_executable(${NAME} ${SOURCE_FILES} ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
+add_executable(${NAME}-Test ${SOURCE_FILES} ${CMAKE_CURRENT_SOURCE_DIR}/test.cpp)
 add_library(${NAME}-s STATIC ${SOURCE_FILES})
 
 if (Boost_FOUND)
@@ -203,4 +203,5 @@ if (Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
     link_directories(${Boost_LIBRARY_DIRS})
     target_link_libraries(${NAME} ${Boost_LIBRARIES})
+    target_link_libraries(${NAME}-Test ${Boost_LIBRARIES})
 endif()

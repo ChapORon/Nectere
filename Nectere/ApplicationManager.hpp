@@ -7,7 +7,7 @@
 #include "IDGenerator.hpp"
 #include "Network/IEventReceiver.hpp"
 #include "TaskResult.hpp"
-#include "UIDVector.hpp"
+#include "UIDSet.hpp"
 
 namespace Nectere
 {
@@ -20,8 +20,8 @@ namespace Nectere
 	{
 	private:
 		IDGenerator m_ApplicationIDGenerator;
-		UIDVector<Application> m_Applications;
-		UIDVector<ACommand> m_Commands;
+		UIDSet<Application> m_Applications;
+		UIDSet<ACommand> m_Commands;
 		std::unordered_map<std::string, std::pair<DynamicLibrary *, Application *>> m_LoadedLibrary;
 
 	private:

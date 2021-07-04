@@ -4,7 +4,7 @@
 
 #include "Network/AServer.hpp"
 #include "Network/Boost_Session.hpp"
-#include "UIDVector.hpp"
+#include "UIDSet.hpp"
 
 namespace Nectere
 {
@@ -17,7 +17,7 @@ namespace Nectere
 			std::atomic_bool m_Closed;
 			boost::asio::io_context m_IOContext;
 			boost::asio::ip::tcp::acceptor m_Acceptor;
-			UIDVector<Boost_Session> m_Sessions;
+			UIDSet<Boost_Session> m_Sessions;
 
 		private:
 			void CloseSession(uint16_t);

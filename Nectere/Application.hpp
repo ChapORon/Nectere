@@ -4,7 +4,7 @@
 #include "AApplicationHandler.hpp"
 #include "ACommand.hpp"
 #include "Event.hpp"
-#include "UIDVector.hpp"
+#include "UIDSet.hpp"
 
 #ifdef WIN32
 #define NECTERE_APPLICATION(name) extern "C" __declspec(dllexport) const char * __stdcall Nectere_ApplicationName() {return name;}\
@@ -23,7 +23,7 @@ namespace Nectere
 	private:
 		uint16_t m_ID;
 		std::string m_Name;
-		UIDVector<ACommand> m_Commands;
+		UIDSet<ACommand> m_Commands;
 		AApplicationHandler *m_Handler;
 		std::chrono::time_point<std::chrono::system_clock> m_UpdateElapsedTime;
 
