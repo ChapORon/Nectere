@@ -27,6 +27,8 @@ namespace Nectere
 
 	void Application::Update()
 	{
+		if (m_IsReloading.load())
+			return;
 		float deltaTime = std::chrono::duration<float>(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now() - m_UpdateElapsedTime)).count();
 		if (m_Handler != nullptr)
 			m_Handler->OnUpdate(deltaTime);
@@ -36,6 +38,7 @@ namespace Nectere
 
 	void Application::BeforeReloading()
 	{
+		m_IsReloading.store(true);
 		m_Commands.Clear();
 		if (m_Handler != nullptr)
 		{
@@ -46,6 +49,7 @@ namespace Nectere
 
 	void Application::AfterReloading()
 	{
+		m_IsReloading.store(false);
 		if (m_Handler != nullptr)
 			m_Handler->OnAfterReload();
 	}

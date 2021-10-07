@@ -22,6 +22,7 @@ namespace Nectere
 		friend class ApplicationManager;
 	private:
 		uint16_t m_ID;
+		std::atomic_bool m_IsReloading;
 		std::string m_Name;
 		UIDSet<ACommand> m_Commands;
 		AApplicationHandler *m_Handler;

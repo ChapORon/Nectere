@@ -1,12 +1,16 @@
 #pragma once
 
 #include "Event.hpp"
-#include "IDGenerator.hpp"
 #include "Network/IEventReceiver.hpp"
 
 namespace Nectere
 {
-	class ThreadSystem;
+	class UserManager;
+    namespace Concurrency
+    {
+        class ThreadSystem;
+    }
+
 	namespace Network
 	{
 		class AServer
@@ -14,17 +18,15 @@ namespace Nectere
 		protected:
 			bool m_IsStarted{ false };
 			int m_Port;
-			ThreadSystem *m_ThreadSystem;
-			IEventReceiver *m_EventReceiver;
-			IDGenerator m_SessionIDGenerator;
+            Concurrency::ThreadSystem *m_ThreadSystem;
+			UserManager *m_UserManager;
 
 		protected:
-			AServer(int port, ThreadSystem *threadSystem, IEventReceiver *handler): m_Port(port), m_ThreadSystem(threadSystem), m_EventReceiver(handler) {}
+			AServer(int port, Concurrency::ThreadSystem *threadSystem, UserManager *userManager): m_Port(port), m_ThreadSystem(threadSystem), m_UserManager(userManager) {}
 
 		public:
 			virtual bool Start() = 0;
 			virtual void Stop() = 0;
-			virtual void Send(uint16_t, const Event &) = 0;
 		};
 	}
 }

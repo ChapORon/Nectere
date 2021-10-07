@@ -11,18 +11,18 @@
 namespace Nectere
 {
 	class ThreadSystem;
+	class UserManager;
 	namespace Network
 	{
 		class AServer;
-		class IEventReceiver;
 
-		AServer *MakeServer(int port, ThreadSystem * threadSystem, IEventReceiver *handler)
+		AServer *MakeServer(int port, Concurrency::ThreadSystem *threadSystem, UserManager *userManager)
 		{
 			#ifdef USE_BOOST
-				return new Boost_Server(port, threadSystem, handler);
+				return new Boost_Server(port, threadSystem, userManager);
 			#else
 				#ifdef WIN32
-					return new Windows_Server(port, threadSystem, handler);
+					return new Windows_Server(port, threadSystem, userManager);
 				#else
 					return nullptr;
 				#endif

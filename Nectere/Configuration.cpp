@@ -110,8 +110,8 @@ namespace Nectere
 				}
 			}
 		}
-		if (ms_ShouldStartServer)
-			Script::CodingStyle::Init();
+//		if (ms_ShouldStartServer)
+//			Script::CodingStyle::Init();
 		return ms_ShouldStartServer;
 	}
 

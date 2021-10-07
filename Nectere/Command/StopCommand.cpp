@@ -3,13 +3,13 @@
 #include "Logger.hpp"
 #include "NectereEventCode.hpp"
 #include "Network/AServer.hpp"
-#include "ThreadSystem.hpp"
+#include "Concurrency/ThreadSystem.hpp"
 
 namespace Nectere
 {
 	namespace Command
 	{
-		StopCommand::StopCommand(Network::AServer *server, ThreadSystem *threadSystem): ANectereCommand(NECTERE_EVENT_STOP, server, threadSystem) {}
+		StopCommand::StopCommand(Network::AServer *server, Concurrency::ThreadSystem *threadSystem): ANectereCommand(NECTERE_EVENT_STOP, server, threadSystem) {}
 		bool StopCommand::IsValid(const std::string &) const { return true; }
 		void StopCommand::Treat(uint16_t sessionId, const std::string &)
 		{

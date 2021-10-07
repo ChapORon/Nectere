@@ -9,7 +9,7 @@ namespace Nectere
 		class StopCommand: public ANectereCommand
 		{
 		public:
-			StopCommand(Network::AServer *, ThreadSystem *);
+			StopCommand(Network::AServer *, Concurrency::ThreadSystem *);
 			bool IsValid(const std::string &) const override;
 			void Treat(uint16_t, const std::string &) override;
 		};

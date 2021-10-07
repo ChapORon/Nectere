@@ -16,7 +16,7 @@ public:
 
 int main(int argc, char **argv)
 {
-	UIDVector<ID> uidVector;
+	UIDSet<ID> uidVector;
 	uidVector.Add(new ID(12));
 	uidVector.Add(new ID(86));
 	uidVector.Add(new ID(209));

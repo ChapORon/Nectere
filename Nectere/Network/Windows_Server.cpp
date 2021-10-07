@@ -2,13 +2,13 @@
 #include "Network/Windows_Server.hpp"
 
 #include "Logger.hpp"
-#include "ThreadSystem.hpp"
+#include "Concurrency/ThreadSystem.hpp"
 
 namespace Nectere
 {
 	namespace Network
 	{
-		Windows_Server::Windows_Server(int port, ThreadSystem *threadSystem, IEventReceiver *handler) : AServer(port, threadSystem, handler)
+		Windows_Server::Windows_Server(int port, Concurrency::ThreadSystem *threadSystem, UserManager *userManager) : AServer(port, threadSystem, userManager)
 		{
 			m_Timeout.tv_sec = 60;
 			m_Timeout.tv_usec = 0;
@@ -66,7 +66,7 @@ namespace Nectere
 			return false;
 		}
 
-		Nectere::TaskResult Windows_Server::AcceptConnection()
+		Nectere::Concurrency::TaskResult Windows_Server::AcceptConnection()
 		{
 			FD_ZERO(&m_FdRead);
 			FD_ZERO(&m_FdWrite);
@@ -82,12 +82,12 @@ namespace Nectere
 			if (ret < 0)
 			{
 				LOG(LogType::Error, "Error on select: ", WSAGetLastError());
-				return TaskResult::Fail;
+				return Concurrency::TaskResult::Fail;
 			}
 			else if (ret == 0)
 			{
 				LOG(LogType::Warning, "No network activity in the last ", m_Timeout.tv_sec, '.', m_Timeout.tv_usec, " seconds");
-				return TaskResult::NeedUpdate;
+				return Concurrency::TaskResult::NeedUpdate;
 			}
 			if (FD_ISSET(m_ListenSocket, &m_FdRead))
 			{
@@ -100,7 +100,7 @@ namespace Nectere
 				{
 					LOG(LogType::Error, "Error while accepting new connection: ", WSAGetLastError());
 					Close();
-					return TaskResult::Fail;
+					return Concurrency::TaskResult::Fail;
 				}
 			}
 			for (const auto &session : m_Sessions)
@@ -110,7 +110,7 @@ namespace Nectere
 				if (FD_ISSET(session->GetSocket(), &m_FdWrite))
 					m_ThreadSystem->AddTask(session, &Windows_Session::Write);
 			}
-			return TaskResult::NeedUpdate;
+			return Concurrency::TaskResult::NeedUpdate;
 		}
 
 		void Windows_Server::Close()

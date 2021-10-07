@@ -28,12 +28,23 @@ set(COMMAND_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/Command/StopCommand.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/Command/StopCommand.hpp)
 
+set(CONCURRENCY_SOURCES
+	${CMAKE_CURRENT_SOURCE_DIR}/Concurrency/Task.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/Concurrency/Task.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/Concurrency/TaskResult.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/Concurrency/Thread.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/Concurrency/Thread.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/Concurrency/ThreadSystem.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/Concurrency/ThreadSystem.hpp)
+
 set(NETWORK_SOURCES
+	${CMAKE_CURRENT_SOURCE_DIR}/Network/ApplicationEventReceiver.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/Network/ApplicationEventReceiver.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/Network/AServer.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/Network/Boost_Server.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/Network/Boost_Server.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Network/Boost_Session.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Network/Boost_Session.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/Network/BoostNetworkUser.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/Network/BoostNetworkUser.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/Network/Header.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/Network/IEventReceiver.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/Network/Windows_Server.cpp
@@ -163,7 +174,13 @@ set(PARG_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/parg_def.h)
 
 set(SOURCE_FILES
-	${PARG_SOURCES} ${COMMAND_SOURCES} ${PARAMETERS_SOURCES} ${SCRIPT_FILES} ${DP_SOURCES} ${NETWORK_SOURCES}
+	${PARG_SOURCES}
+	${COMMAND_SOURCES}
+	${PARAMETERS_SOURCES}
+	#${SCRIPT_FILES}
+	${DP_SOURCES}
+	${NETWORK_SOURCES}
+	${CONCURRENCY_SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/AApplicationHandler.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/AApplicationHandler.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ACommand.cpp
@@ -172,6 +189,8 @@ set(SOURCE_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/Application.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ApplicationManager.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ApplicationManager.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/AUser.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/AUser.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/Configuration.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/Configuration.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/DynamicLibrary.hpp
@@ -183,14 +202,9 @@ set(SOURCE_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/NectereEventCode.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/StringUtils.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/StringUtils.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Task.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Task.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/TaskResult.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Thread.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Thread.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ThreadSystem.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ThreadSystem.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/UIDSet.hpp)
+	${CMAKE_CURRENT_SOURCE_DIR}/UIDSet.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/UserManager.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/UserManager.hpp)
 	
 set_source_files_properties(${PARG_SOURCES} PROPERTIES LANGUAGE CXX)
 

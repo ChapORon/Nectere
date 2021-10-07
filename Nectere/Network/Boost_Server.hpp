@@ -2,8 +2,9 @@
 
 #pragma once
 
+#include <unordered_set>
 #include "Network/AServer.hpp"
-#include "Network/Boost_Session.hpp"
+#include "Network/BoostNetworkUser.hpp"
 #include "UIDSet.hpp"
 
 namespace Nectere
@@ -17,15 +18,14 @@ namespace Nectere
 			std::atomic_bool m_Closed;
 			boost::asio::io_context m_IOContext;
 			boost::asio::ip::tcp::acceptor m_Acceptor;
-			UIDSet<Boost_Session> m_Sessions;
+			std::unordered_set<uint16_t> m_Sessions;
 
 		private:
 			void CloseSession(uint16_t);
 			void AcceptSession();
 
 		public:
-			Boost_Server(int, ThreadSystem *, IEventReceiver *);
-			void Send(uint16_t, const Event &) override;
+			Boost_Server(int, Concurrency::ThreadSystem *, UserManager *);
 			bool Start() override;
 			void Stop() override;
 		};

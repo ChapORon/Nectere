@@ -3,6 +3,7 @@
 #pragma once
 
 #include <boost/asio.hpp>
+#include "AUser.hpp"
 #include "Network/Header.hpp"
 #include "Network/IEventReceiver.hpp"
 
@@ -10,31 +11,36 @@ namespace Nectere
 {
 	namespace Network
 	{
-		class Boost_Session
+		class BoostNetworkUser: public AUser
 		{
+			friend class Boost_Server;
+		private:
+			struct BoostSocket
+			{
+				boost::asio::io_context &m_IOContext;
+				boost::asio::ip::tcp::socket m_Socket;
+			};
+
 		private:
 			char m_HeaderData[sizeof(Header)];
 			char *m_MessageData{ nullptr };
 
 		private:
-			uint16_t m_SessionID;
 			std::atomic_bool m_Closed;
-			IEventReceiver *m_Handler;
 			Header m_Header;
 			std::string m_Message;
-			boost::asio::io_context &m_IOContext;
-			boost::asio::ip::tcp::socket m_Socket;
+			BoostSocket *m_BoostSocket;
 
 		private:
 			void ReadHeader();
 			void ReadData();
+			void Receive(const Event &) override;
+			void InternalInit(boost::asio::io_context &, boost::asio::ip::tcp::socket);
 
 		public:
-			Boost_Session(uint16_t, boost::asio::io_context &, boost::asio::ip::tcp::socket, IEventReceiver *);
-			void Send(const Event &);
+			BoostNetworkUser(BoostSocket *);
 			void Close();
-			uint16_t GetID() const { return m_SessionID; }
-			~Boost_Session();
+			~BoostNetworkUser();
 		};
 	}
 }

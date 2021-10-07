@@ -4,7 +4,7 @@
 #include <mutex>
 #include <queue>
 #include "Event.hpp"
-#include "TaskResult.hpp"
+#include "Concurrency/TaskResult.hpp"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -35,9 +35,9 @@ namespace Nectere
 			std::queue<Nectere::Event> m_SendBuffer;
 
 		private:
-			Nectere::TaskResult ReadHeader(Header &);
-			Nectere::TaskResult ReadMessage(const Header &);
-			Nectere::TaskResult Write(const Nectere::Event &);
+            Concurrency::TaskResult ReadHeader(Header &);
+            Concurrency::TaskResult ReadMessage(const Header &);
+            Concurrency::TaskResult Write(const Nectere::Event &);
 
 		public:
 			Windows_Session(unsigned int, IEventReceiver *, const SOCKET &);
@@ -45,8 +45,8 @@ namespace Nectere
 			void Send(const Nectere::Event &);
 			void Clean();
 			void Close();
-			Nectere::TaskResult Read();
-			Nectere::TaskResult Write();
+            Concurrency::TaskResult Read();
+            Concurrency::TaskResult Write();
 			~Windows_Session() { Close(); }
 		};
 	}

@@ -3,16 +3,16 @@
 #include "Command/StopCommand.hpp"
 #include "Configuration.hpp"
 #include "Logger.hpp"
-#include "ThreadSystem.hpp"
 
 typedef const char *FUNCTION(ApplicationName)();
 typedef void FUNCTION(ApplicationLoader)(Nectere::Application *);
 
 namespace Nectere
 {
-	void ApplicationManager::OnReceive(uint16_t sessionId, const Event &message)
+	ApplicationManager::ApplicationManager(UserManager *userManager): m_UserManager(userManager) {}
+
+	void ApplicationManager::Receive(uint16_t sessionId, const Event &message)
 	{
-		LOG(LogType::Verbose, "Server created on port ", Configuration::Get<int>("Network.Port"));
 		if (Application *application = m_Applications.Get(message.m_ApplicationID))
 		{
 			LOG(LogType::Verbose, "Checking if application \"", application->GetName(), "\" can receive and treat event with code ", message.m_EventCode);
@@ -24,12 +24,12 @@ namespace Nectere
 		}
 	}
 
-	void ApplicationManager::GenerateNectereApplication(Network::AServer *server, ThreadSystem *threadSystem)
-	{
-		Application *application = new Application(m_ApplicationIDGenerator.GenerateID(), "Nectere");
-		application->AddCommand(new Command::StopCommand(server, threadSystem));
-		m_Applications.Add(application);
-	}
+    Application *ApplicationManager::CreateNewApplication(const std::string &applicationName)
+    {
+        Application *application = new Application(m_ApplicationIDGenerator.GenerateID(), applicationName);
+        m_Applications.Add(application);
+        return application;
+    }
 
 	void ApplicationManager::LoadApplication(const std::filesystem::path &path)
 	{
@@ -66,7 +66,7 @@ namespace Nectere
 			if (dynamicLibrary->CanReload())
 			{
 				dynamicLibrary->Reload();
-				if (!dynamicLibrary)
+				if (!static_cast<bool>(dynamicLibrary))
 				{
 					uint16_t applicationID = application->GetID();
 					m_ApplicationIDGenerator.FreeID(applicationID);
@@ -95,16 +95,14 @@ namespace Nectere
 		}
 	}
 
-	TaskResult ApplicationManager::Update()
-	{
-		for (const auto &application : m_Applications.GetElements())
-			application->Update();
-		return TaskResult::NeedUpdate;
-	}
+    void ApplicationManager::Update()
+    {
+        for (auto application : m_Applications.GetElements())
+            application->Update();
+    }
 
-	void ApplicationManager::LoadApplications(Network::AServer *server, ThreadSystem *threadSystem)
+	void ApplicationManager::LoadApplications()
 	{
-		GenerateNectereApplication(server, threadSystem);
 		try
 		{
 			for (const auto &entry : std::filesystem::directory_iterator("plugins"))
@@ -112,7 +110,6 @@ namespace Nectere
 				if (!entry.is_directory())
 					LoadApplication(entry.path());
 			}
-			threadSystem->AddTask(this, &ApplicationManager::Update);
 		}
 		catch (const std::exception &) {}
 	}

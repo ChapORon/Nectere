@@ -1,16 +1,20 @@
-﻿#include <csignal>
-#include <iostream>
+﻿#ifndef WIN32
+    #include <csignal>
+#endif
 #include "ApplicationManager.hpp"
+#include "Command/StopCommand.hpp"
+#include "Concurrency/ThreadSystem.hpp"
 #include "Configuration.hpp"
-#include "Logger.hpp"
 #include "Parameters/LogPathParameter.hpp"
 #include "Parameters/NetworkPortParameter.hpp"
 #include "Parameters/VerboseParameter.hpp"
+#include "Network/ApplicationEventReceiver.hpp"
 #include "Network/Server.hpp"
-#include "ThreadSystem.hpp"
+#include "UserManager.hpp"
 
-Nectere::ThreadSystem *g_threadSystem = nullptr;
+Nectere::Concurrency::ThreadSystem *g_ThreadSystem = nullptr;
 Nectere::Network::AServer *g_Server = nullptr;
+Nectere::UserManager *g_UserManager = nullptr;
 
 namespace Nectere
 {
@@ -42,8 +46,8 @@ namespace Nectere
 		{
 			if (g_Server)
 				g_Server->Stop();
-			if (g_threadSystem)
-				g_threadSystem->Stop();
+			if (g_ThreadSystem)
+                g_ThreadSystem->Stop();
 			return TRUE;
 		}
 		case CTRL_BREAK_EVENT:
@@ -52,8 +56,8 @@ namespace Nectere
 		{
 			if (g_Server)
 				g_Server->Stop();
-			if (g_threadSystem)
-				g_threadSystem->Stop();
+			if (g_ThreadSystem)
+                g_ThreadSystem->Stop();
 			return FALSE;
 		}
 		default:
@@ -65,10 +69,16 @@ namespace Nectere
 	{
 		if (g_Server)
 			g_Server->Stop();
-		if (g_threadSystem)
-			g_threadSystem->Stop();
+		if (g_ThreadSystem)
+			g_ThreadSystem->Stop();
 	}
 #endif
+
+Nectere::Concurrency::TaskResult UpdateApplicationManager()
+{
+	g_UserManager->Update();
+    return Nectere::Concurrency::TaskResult::NeedUpdate;
+}
 
 int main(int argc, char **argv)
 {
@@ -77,23 +87,32 @@ int main(int argc, char **argv)
 			return -1;
 	#else
 		::signal(SIGINT, SigInterruptHandler);
-	#endif
-	if (g_threadSystem = new Nectere::ThreadSystem())
+    #endif
+	if (g_ThreadSystem = new Nectere::Concurrency::ThreadSystem())
 	{
-		g_threadSystem->Start();
+        g_ThreadSystem->Start();
 		Nectere::Init();
-		Nectere::ApplicationManager applicationManager;
-		if (Nectere::Configuration::LoadConfiguration(argc, argv))
-		{
-			if (g_Server = Nectere::Network::MakeServer(Nectere::Configuration::Get<int>("Network.Port"), g_threadSystem, &applicationManager))
+        if (g_UserManager = new Nectere::UserManager())
+        {
+			if (Nectere::ApplicationManager *applicationManager = g_UserManager->GetApplicationManager())
 			{
-				applicationManager.LoadApplications(g_Server, g_threadSystem);
-				if (g_Server->Start())
-					g_threadSystem->Await();
-				delete(g_Server);
+				if (Nectere::Configuration::LoadConfiguration(argc, argv))
+				{
+					if (g_Server = Nectere::Network::MakeServer(Nectere::Configuration::Get<int>("Network.Port"), g_ThreadSystem, g_UserManager))
+					{
+						Nectere::Application *application = applicationManager->CreateNewApplication("Nectere");
+						application->AddCommand(new Nectere::Command::StopCommand(g_Server, g_ThreadSystem));
+						applicationManager->LoadApplications();
+						g_ThreadSystem->AddTask(&UpdateApplicationManager);
+						if (g_Server->Start())
+							g_ThreadSystem->Await();
+						delete (g_Server);
+					}
+				}
 			}
-		}
-		delete(g_threadSystem);
+            delete(g_UserManager);
+        }
+		delete(g_ThreadSystem);
 		Nectere::Configuration::Clear();
 		return 0;
 	}

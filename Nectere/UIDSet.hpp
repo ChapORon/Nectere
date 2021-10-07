@@ -100,14 +100,18 @@ namespace Nectere
 			return nullptr;
 		}
 
-		void Remove(uint16_t id)
+		bool Remove(uint16_t id)
 		{
 			if (m_Elements.empty())
-				return;
+				return false;
 			size_t left, right;
 			size_t pos = Search(id, left, right);
 			if (pos != (m_Elements.size() + 1) && id == m_Elements[pos]->GetID())
+			{
 				RemoveAt(pos);
+				return true;
+			}
+			return false;
 		}
 
 		void Clear()

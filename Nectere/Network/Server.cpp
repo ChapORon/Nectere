@@ -4,7 +4,7 @@ namespace Nectere
 {
 	namespace Network
 	{
-		AServer *MakeServer(int port, ThreadSystem *threadSystem, IEventReceiver *handler)
+		AServer *MakeServer(int port, Concurrency::ThreadSystem *threadSystem, IEventReceiver *handler)
 		{
 			#ifdef USE_BOOST
 				return new Boost_Server(port, threadSystem, handler);

@@ -29,10 +29,10 @@ namespace Nectere
 			std::vector<Windows_Session *> m_Sessions;
 
 		private:
-			Nectere::TaskResult AcceptConnection();
+			Concurrency::TaskResult AcceptConnection();
 
 		public:
-			Windows_Server(int, ThreadSystem *, IEventReceiver *);
+			Windows_Server(int, Concurrency::ThreadSystem *, UserManager *);
 			bool IsStarted() { return m_IsStarted; }
 			void Close();
 			bool Start() override;
