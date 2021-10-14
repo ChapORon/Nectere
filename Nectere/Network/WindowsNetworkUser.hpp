@@ -3,6 +3,7 @@
 
 #include <mutex>
 #include <queue>
+#include "AUser.hpp"
 #include "Event.hpp"
 #include "Concurrency/TaskResult.hpp"
 
@@ -14,8 +15,7 @@ namespace Nectere
 {
 	namespace Network
 	{
-		class IEventReceiver;
-		class Windows_Session
+		class WindowsNetworkUser: public AUser
 		{
 		private:
 			struct Header
@@ -27,8 +27,6 @@ namespace Nectere
 			};
 
 		private:
-			unsigned int m_ID;
-			IEventReceiver *m_Handler;
 			SOCKET m_Socket;
 			std::atomic_bool m_Closed;
 			std::mutex m_SendBufferMutex;
@@ -40,14 +38,14 @@ namespace Nectere
             Concurrency::TaskResult Write(const Nectere::Event &);
 
 		public:
-			Windows_Session(unsigned int, IEventReceiver *, const SOCKET &);
+			WindowsNetworkUser(const SOCKET &);
 			SOCKET GetSocket() { return m_Socket; }
 			void Send(const Nectere::Event &);
 			void Clean();
 			void Close();
             Concurrency::TaskResult Read();
             Concurrency::TaskResult Write();
-			~Windows_Session() { Close(); }
+			~WindowsNetworkUser() { Close(); }
 		};
 	}
 }

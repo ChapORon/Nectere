@@ -7,10 +7,10 @@ namespace Nectere
 		AServer *MakeServer(int port, Concurrency::ThreadSystem *threadSystem, IEventReceiver *handler)
 		{
 			#ifdef USE_BOOST
-				return new Boost_Server(port, threadSystem, handler);
+				return new BoostNetworkServer(port, threadSystem, handler);
 			#else
 				#ifdef WIN32
-					return new Windows_Server(port, threadSystem, handler);
+					return new WindowsNetworkServer(port, threadSystem, handler);
 				#else
 					return nullptr;
 				#endif

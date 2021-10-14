@@ -14,6 +14,7 @@ namespace Nectere
 		void StopCommand::Treat(uint16_t sessionId, const std::string &)
 		{
 			LOG(LogType::Standard, '[', sessionId, "] Stopping server");
+			SendEvent(sessionId, "Server Stopped");
 			m_Server->Stop();
 			m_ThreadSystem->Stop();
 		}

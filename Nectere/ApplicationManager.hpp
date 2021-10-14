@@ -5,21 +5,16 @@
 #include "Application.hpp"
 #include "DynamicLibrary.hpp"
 #include "IDGenerator.hpp"
-#include "Concurrency/TaskResult.hpp"
+#include "Ptr.hpp"
 #include "UIDSet.hpp"
 
 namespace Nectere
 {
 	class ThreadSystem;
 	class UserManager;
-	namespace Network
-	{
-		class ApplicationEventReceiver;
-		class AServer;
-	}
 	class ApplicationManager final
 	{
-		friend class Network::ApplicationEventReceiver;
+		friend class Application;
 		friend class UserManager;
 	private:
 		UserManager *m_UserManager;
@@ -31,10 +26,12 @@ namespace Nectere
 	private:
 		void LoadApplication(const std::filesystem::path &);
 		void Receive(uint16_t, const Event &);
+		void SendEvent(uint16_t, const Event &);
+		void SendEvent(const std::vector<uint16_t> &, const Event &);
 
 	public:
 		ApplicationManager(UserManager *);
-		Application *CreateNewApplication(const std::string &);
+		Ptr<Application> CreateNewApplication(const std::string &);
         void Update();
 		void LoadApplications();
 		~ApplicationManager();

@@ -1,5 +1,5 @@
 #ifdef WIN32
-#include "Network/Windows_Server.hpp"
+#include "Network/WindowsNetworkServer.hpp"
 
 #include "Logger.hpp"
 #include "Concurrency/ThreadSystem.hpp"
@@ -8,7 +8,7 @@ namespace Nectere
 {
 	namespace Network
 	{
-		Windows_Server::Windows_Server(int port, Concurrency::ThreadSystem *threadSystem, UserManager *userManager) : AServer(port, threadSystem, userManager)
+		WindowsNetworkServer::WindowsNetworkServer(int port, Concurrency::ThreadSystem *threadSystem, UserManager *userManager) : AServer(port, threadSystem, userManager)
 		{
 			m_Timeout.tv_sec = 60;
 			m_Timeout.tv_usec = 0;
@@ -16,7 +16,7 @@ namespace Nectere
 			m_WinSockStarted = false;
 		}
 
-		bool Windows_Server::Start()
+		bool WindowsNetworkServer::Start()
 		{
 			if (!m_IsStarted)
 			{
@@ -46,7 +46,7 @@ namespace Nectere
 								else
 								{
 									m_IsStarted = true;
-									m_ThreadSystem->AddTask(this, &Windows_Server::AcceptConnection);
+									m_ThreadSystem->AddTask(this, &WindowsNetworkServer::AcceptConnection);
 									return true;
 								}
 							}
@@ -66,13 +66,13 @@ namespace Nectere
 			return false;
 		}
 
-		Nectere::Concurrency::TaskResult Windows_Server::AcceptConnection()
+		Nectere::Concurrency::TaskResult WindowsNetworkServer::AcceptConnection()
 		{
 			FD_ZERO(&m_FdRead);
 			FD_ZERO(&m_FdWrite);
 			FD_SET(0, &m_FdRead);
 			FD_SET(m_ListenSocket, &m_FdRead);
-			for (Windows_Session *session : m_Sessions)
+			for (WindowsNetworkUser *session : m_Sessions)
 			{
 				int sessionSocket = session->GetSocket();
 				FD_SET(sessionSocket, &m_FdRead);
@@ -106,14 +106,14 @@ namespace Nectere
 			for (const auto &session : m_Sessions)
 			{
 				if (FD_ISSET(session->GetSocket(), &m_FdRead))
-					m_ThreadSystem->AddTask(session, &Windows_Session::Read);
+					m_ThreadSystem->AddTask(session, &WindowsNetworkUser::Read);
 				if (FD_ISSET(session->GetSocket(), &m_FdWrite))
-					m_ThreadSystem->AddTask(session, &Windows_Session::Write);
+					m_ThreadSystem->AddTask(session, &WindowsNetworkUser::Write);
 			}
 			return Concurrency::TaskResult::NeedUpdate;
 		}
 
-		void Windows_Server::Close()
+		void WindowsNetworkServer::Close()
 		{
 			if (m_ListenSocket != INVALID_SOCKET)
 			{
@@ -125,7 +125,7 @@ namespace Nectere
 				m_WinSockStarted = false;
 			}
 
-			for (Windows_Session *session : m_Sessions)
+			for (WindowsNetworkUser *session : m_Sessions)
 				delete(session);
 			m_Sessions.clear();
 		}

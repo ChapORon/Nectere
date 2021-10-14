@@ -6,11 +6,12 @@ namespace Nectere
 	{
 		bool VerboseParameter::DefaultValue() const
 		{
-			#ifndef DEBUG
-				return false;
-			#else
-				return true;
-			#endif
+			return false;
+// 			#ifndef DEBUG
+// 				return false;
+// 			#else
+// 				return true;
+// 			#endif
 		}
 
 		bool VerboseParameter::Parse() const { return true; }

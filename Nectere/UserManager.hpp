@@ -2,6 +2,7 @@
 
 #include "Event.hpp"
 #include "IDGenerator.hpp"
+#include "Ptr.hpp"
 #include "UIDSet.hpp"
 
 namespace Nectere
@@ -18,7 +19,7 @@ namespace Nectere
 		IDGenerator m_IDGenerator;
 
 	private:
-		uint16_t InternalAddUser(AUser *);
+		AUser *InternalAddUser(AUser *);
 		void ReceiveEvent(uint16_t, const Event &);
 		void SendEvent(uint16_t, const Event &);
 		void SendEvent(const std::vector<uint16_t> &, const Event &);
@@ -26,9 +27,9 @@ namespace Nectere
 	public:
 		UserManager();
 		template <typename t_User, typename ...t_Arg>
-		uint16_t AddUser(t_Arg&&... args) { return InternalAddUser(new t_User(std::move(args)...)); }
+		Ptr<t_User> AddUser(t_Arg&&... args) { return Ptr(dynamic_cast<t_User *>(InternalAddUser(new t_User(std::move(args)...)))); }
 		void RemoveUser(uint16_t);
-		ApplicationManager *GetApplicationManager() { return m_ApplicationManager; }
+		Ptr<ApplicationManager> GetApplicationManager() { return Ptr(m_ApplicationManager); }
 		void Update();
 		~UserManager();
 	};

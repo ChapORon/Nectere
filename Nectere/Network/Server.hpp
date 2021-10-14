@@ -1,10 +1,10 @@
 #pragma once
 
 #ifdef USE_BOOST
-	#include "Network/Boost_Server.hpp"
+	#include "Network/BoostNetworkServer.hpp"
 #else
 	#ifdef WIN32
-		#include "Network/Windows_Server.hpp"
+		#include "Network/WindowsNetworkServer.hpp"
 	#endif
 #endif
 
@@ -19,10 +19,10 @@ namespace Nectere
 		AServer *MakeServer(int port, Concurrency::ThreadSystem *threadSystem, UserManager *userManager)
 		{
 			#ifdef USE_BOOST
-				return new Boost_Server(port, threadSystem, userManager);
+				return new BoostNetworkServer(port, threadSystem, userManager);
 			#else
 				#ifdef WIN32
-					return new Windows_Server(port, threadSystem, userManager);
+					return new WindowsNetworkServer(port, threadSystem, userManager);
 				#else
 					return nullptr;
 				#endif

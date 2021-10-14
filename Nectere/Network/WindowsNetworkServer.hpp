@@ -11,13 +11,13 @@
 #include <ws2tcpip.h>
 
 #include "Network/AServer.hpp"
-#include "Network/Windows_Session.hpp"
+#include "Network/WindowsNetworkUser.hpp"
 
 namespace Nectere
 {
 	namespace Network
 	{
-		class Windows_Server : public AServer
+		class WindowsNetworkServer : public AServer
 		{
 		private:
 			bool m_IsStarted;
@@ -26,18 +26,18 @@ namespace Nectere
 			struct timeval m_Timeout;
 			SOCKET m_ListenSocket = INVALID_SOCKET;
 			bool m_WinSockStarted;
-			std::vector<Windows_Session *> m_Sessions;
+			std::vector<WindowsNetworkUser *> m_Sessions;
 
 		private:
 			Concurrency::TaskResult AcceptConnection();
 
 		public:
-			Windows_Server(int, Concurrency::ThreadSystem *, UserManager *);
+			WindowsNetworkServer(int, Concurrency::ThreadSystem *, UserManager *);
 			bool IsStarted() { return m_IsStarted; }
 			void Close();
 			bool Start() override;
 			void Stop() override { Close(); }
-			~Windows_Server() { Close(); }
+			~WindowsNetworkServer() { Close(); }
 		};
 	}
 }

@@ -13,7 +13,7 @@ namespace Nectere
 	{
 		class BoostNetworkUser: public AUser
 		{
-			friend class Boost_Server;
+			friend class BoostNetworkServer;
 		private:
 			struct BoostSocket
 			{

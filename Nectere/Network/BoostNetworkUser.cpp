@@ -16,8 +16,8 @@ namespace Nectere
 
 		void BoostNetworkUser::ReadHeader()
 		{
-			boost::asio::async_read(m_BoostSocket->m_Socket, boost::asio::buffer(m_HeaderData, sizeof(Network::Header)), [this](boost::system::error_code ec, size_t) {
-				if (!ec)
+			boost::asio::async_read(m_BoostSocket->m_Socket, boost::asio::buffer(m_HeaderData, sizeof(Header)), [this](boost::system::error_code ec, size_t length) {
+				if (!ec && length == sizeof(Header))
 				{
 					LOG(LogType::Standard, '[', GetID(), "] Decoding header");
 					std::memcpy(&m_Header, m_HeaderData, sizeof(Header));

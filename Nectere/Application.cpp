@@ -1,16 +1,38 @@
 #include "Application.hpp"
 
+#include "ApplicationManager.hpp"
 #include "Logger.hpp"
 
 namespace Nectere
 {
-	Application::Application(uint16_t id, const std::string &name) : m_ID(id), m_Name(name), m_Handler(nullptr), m_UpdateElapsedTime(std::chrono::system_clock::now()) {}
+	Application::Application(uint16_t id, const std::string &name, ApplicationManager *applicationManager) :
+		m_ID(id),
+		m_Name(name),
+		m_ApplicationManager(applicationManager),
+		m_Handler(nullptr),
+		m_UpdateElapsedTime(std::chrono::system_clock::now()) {}
 	
-	void Application::AddCommand(ACommand *command)
+	ACommand *Application::InternalAddCommand(ACommand *command)
 	{
-		m_Commands.Add(command);
-		if (m_Handler != nullptr)
-			m_Handler->OnCommandAdded(command);
+		if (command)
+		{
+			command->SetApplication(this);
+			command->OnInit();
+			m_Commands.Add(command);
+			if (m_Handler != nullptr)
+				m_Handler->OnCommandAdded(command);
+		}
+		return command;
+	}
+
+	void Application::SendEvent(uint16_t id, uint16_t commandID, const std::string &data)
+	{
+		m_ApplicationManager->SendEvent(id, { m_ID, commandID, data });
+	}
+
+	void Application::SendEvent(const std::vector<uint16_t> &ids, uint16_t commandID, const std::string &data)
+	{
+		m_ApplicationManager->SendEvent(ids, { m_ID, commandID, data });
 	}
 
 	bool Application::IsEventAllowed(const Event &event)
@@ -29,6 +51,8 @@ namespace Nectere
 	{
 		if (m_IsReloading.load())
 			return;
+		for (auto command : m_Commands)
+			command->Update();
 		float deltaTime = std::chrono::duration<float>(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now() - m_UpdateElapsedTime)).count();
 		if (m_Handler != nullptr)
 			m_Handler->OnUpdate(deltaTime);

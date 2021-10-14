@@ -3,6 +3,7 @@
 #include "Command/StopCommand.hpp"
 #include "Configuration.hpp"
 #include "Logger.hpp"
+#include "UserManager.hpp"
 
 typedef const char *FUNCTION(ApplicationName)();
 typedef void FUNCTION(ApplicationLoader)(Nectere::Application *);
@@ -24,11 +25,21 @@ namespace Nectere
 		}
 	}
 
-    Application *ApplicationManager::CreateNewApplication(const std::string &applicationName)
+	void ApplicationManager::SendEvent(uint16_t id, const Event &event)
+	{
+		m_UserManager->SendEvent(id, event);
+	}
+
+	void ApplicationManager::SendEvent(const std::vector<uint16_t> &ids, const Event &event)
+	{
+		m_UserManager->SendEvent(ids, event);
+	}
+
+    Ptr<Application> ApplicationManager::CreateNewApplication(const std::string &applicationName)
     {
-        Application *application = new Application(m_ApplicationIDGenerator.GenerateID(), applicationName);
+        Application *application = new Application(m_ApplicationIDGenerator.GenerateID(), applicationName, this);
         m_Applications.Add(application);
-        return application;
+        return Ptr(application);
     }
 
 	void ApplicationManager::LoadApplication(const std::filesystem::path &path)
@@ -53,7 +64,7 @@ namespace Nectere
 			if (!applicationLoader)
 				return;
 			LOG(LogType::Standard, moduleName, ": Loading application");
-			Application *application = new Application(m_ApplicationIDGenerator.GenerateID(), name);
+			Application *application = new Application(m_ApplicationIDGenerator.GenerateID(), name, this);
 			applicationLoader(application);
 			m_LoadedLibrary[dynamicLibrary->GetPath()] = std::make_pair(dynamicLibrary, application);
 			m_Applications.Add(application);
@@ -97,7 +108,7 @@ namespace Nectere
 
     void ApplicationManager::Update()
     {
-        for (auto application : m_Applications.GetElements())
+        for (auto application : m_Applications)
             application->Update();
     }
 

@@ -4,4 +4,4 @@ project (Nectere)
 set(CMAKE_CXX_STANDARD 20)
 
 add_subdirectory(Nectere)
-add_subdirectory(NectereClientTest)
+add_subdirectory(NectereClient)

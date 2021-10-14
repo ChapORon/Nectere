@@ -11,16 +11,15 @@ namespace Nectere
 		m_ApplicationManager = new ApplicationManager(this);
 	}
 
-	uint16_t UserManager::InternalAddUser(AUser *user)
+	AUser *UserManager::InternalAddUser(AUser *user)
 	{
 		if (user)
 		{
 			LOG(LogType::Standard, '[', user->GetID(), "] User added");
 			user->InternalInit(m_IDGenerator.GenerateID(), this);
 			m_Users.Add(user);
-			return user->GetID();
 		}
-		return 0;
+		return user;
 	}
 
 	void UserManager::RemoveUser(uint16_t id)
@@ -31,14 +30,14 @@ namespace Nectere
 
 	void UserManager::Update()
 	{
+		for (auto user : m_Users)
+			user->Update();
 		if (m_ApplicationManager)
 			m_ApplicationManager->Update();
 	}
 
 	void UserManager::ReceiveEvent(uint16_t userID, const Event &event)
 	{
-		for (auto user : m_Users.GetElements())
-			user->Update();
 		if (m_ApplicationManager)
 			m_ApplicationManager->Receive(userID, event);
 	}

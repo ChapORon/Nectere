@@ -11,7 +11,7 @@ namespace Nectere
 {
 	namespace Network
 	{
-		class Boost_Server : public AServer
+		class BoostNetworkServer : public AServer
 		{
 		private:
 			std::atomic_bool m_IsClosing;
@@ -25,7 +25,7 @@ namespace Nectere
 			void AcceptSession();
 
 		public:
-			Boost_Server(int, Concurrency::ThreadSystem *, UserManager *);
+			BoostNetworkServer(int, Concurrency::ThreadSystem *, UserManager *);
 			bool Start() override;
 			void Stop() override;
 		};
