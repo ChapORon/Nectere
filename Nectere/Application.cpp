@@ -5,7 +5,7 @@
 
 namespace Nectere
 {
-	Application::Application(uint16_t id, const std::string &name, ApplicationManager *applicationManager) :
+	Application::Application(uint16_t id, const std::string &name, const Ptr<ApplicationManager> &applicationManager) :
 		m_ID(id),
 		m_Name(name),
 		m_ApplicationManager(applicationManager),
@@ -16,7 +16,7 @@ namespace Nectere
 	{
 		if (command)
 		{
-			command->SetApplication(this);
+			command->SetApplication(Ptr(this), m_ApplicationManager);
 			command->OnInit();
 			m_Commands.Add(command);
 			if (m_Handler != nullptr)
@@ -35,10 +35,14 @@ namespace Nectere
 		m_ApplicationManager->SendEvent(ids, { m_ID, commandID, data });
 	}
 
-	bool Application::IsEventAllowed(const Event &event)
+	bool Application::IsEventAllowed(const Event &event, bool &eventExist)
 	{
-		if (ACommand *command = m_Commands.Get(event.m_EventCode))
+		eventExist = false;
+		if (Ptr<ACommand> &command = m_Commands.Get(event.m_EventCode))
+		{
+			eventExist = true;
 			return command->IsValid(event.m_Data);
+		}
 		return false;
 	}
 

@@ -1,42 +1,23 @@
 ﻿#include <iostream>
-#include <sstream>
-#include "Connection.hpp"
+#include "NecterePrompt.hpp"
+
+static void HandleClear()
+{
+	::system("CLS");
+}
+
+static void HandlePrint(const std::vector<std::string> &args)
+{
+	for (unsigned int n = 1; n < args.size(); ++n)
+		std::cout << args[n] << std::endl;
+}
 
 int main()
 {
-		NectereClient::Connection connection;
-		std::string line;
-		do 
-		{
-			if (!line.empty())
-			{
-				std::vector<std::string> args;
-				std::stringstream buffer;
-				bool inQuote = false;
-				for (char c : line)
-				{
-					if (c == '"')
-					{
-						inQuote = !inQuote;
-						if (!inQuote)
-						{
-							args.emplace_back(buffer.str());
-							buffer.str("");
-						}
-					}
-					else if (c == ' ' && !inQuote)
-					{
-						args.emplace_back(buffer.str());
-						buffer.str("");
-					}
-					else
-						buffer << c;
-				}
-				args.emplace_back(buffer.str());
-				connection.TreatLine(args);
-			}
-			if (connection.IsRunning())
-				std::cout << "$> ";
-		} while (connection.IsRunning() && std::getline(std::cin, line));
+	NecterePrompt prompt;
+	prompt.AddCommand("quit", [&prompt]() mutable { prompt.Stop(); });
+	prompt.AddCommand("clear", &HandleClear);
+	prompt.AddCommand("print", &HandlePrint);
+	prompt.Run();
 	return 0;
 }

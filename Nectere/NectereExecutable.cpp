@@ -1,6 +1,8 @@
 #include "NectereExecutable.hpp"
 
 #include "ApplicationManager.hpp"
+#include "Command/ApplicationListCommand.hpp"
+#include "Command/CommandListCommand.hpp"
 #include "Command/StopCommand.hpp"
 #include "Concurrency/ThreadSystem.hpp"
 #include "Configuration.hpp"
@@ -45,8 +47,13 @@ namespace Nectere
 						{
 							if (auto application = applicationManager->CreateNewApplication("Nectere"))
 							{
+								application->AddCommand<Command::ApplicationListCommand>(m_Server, m_ThreadSystem);
+								application->AddCommand<Command::CommandListCommand>(m_Server, m_ThreadSystem);
 								application->AddCommand<Command::StopCommand>(m_Server, m_ThreadSystem);
 							}
+							applicationManager->CreateNewApplication("Dummy 1");
+							applicationManager->CreateNewApplication("Dummy 2");
+							applicationManager->CreateNewApplication("Dummy 3");
 							applicationManager->LoadApplications();
 							m_ThreadSystem->AddTask([=]() { return Update(); });
 							if (m_Server->Start())

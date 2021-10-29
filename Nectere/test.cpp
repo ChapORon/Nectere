@@ -11,7 +11,7 @@ using namespace Nectere;
 class MyCommand : public ACommand
 {
 public:
-	MyCommand(): ACommand(12) {}
+	MyCommand(): ACommand(12, "my") {}
 
 	bool IsValid(const std::string &) const override { return false; }
 

@@ -28,7 +28,7 @@ namespace Nectere
 		std::atomic_bool m_IsReloading;
 		std::string m_Name;
 		UIDSet<ACommand> m_Commands;
-		ApplicationManager *m_ApplicationManager;
+		Ptr<ApplicationManager> m_ApplicationManager;
 		AApplicationHandler *m_Handler;
 		std::chrono::time_point<std::chrono::system_clock> m_UpdateElapsedTime;
 
@@ -40,16 +40,17 @@ namespace Nectere
 		//TODO: Add GetCommand<t_CommandType>
 
 	public:
-		Application(uint16_t, const std::string &, ApplicationManager *);
+		Application(uint16_t, const std::string &, const Ptr<ApplicationManager> &);
 		uint16_t GetID() const { return m_ID; }
 		const std::string &GetName() const { return m_Name; };
 		void SetHandler(AApplicationHandler *handler) { m_Handler = handler; };
 		template <typename t_CommandType, typename ...t_Arg>
-		Ptr<t_CommandType> AddCommand(t_Arg&&... args) { return Ptr(dynamic_cast<t_CommandType *>(InternalAddCommand(new t_CommandType(args...)))); }
-		bool IsEventAllowed(const Event &);
+		Ptr<t_CommandType> AddCommand(t_Arg&&... args) { return Ptr(dynamic_cast<t_CommandType *>(InternalAddCommand(new t_CommandType(std::forward<t_Arg>(args)...)))); }
+		bool IsEventAllowed(const Event &, bool &);
 		void Treat(uint16_t, const Event &);
 		void Update();
 		void BeforeReloading();
 		void AfterReloading();
+		const std::vector<Ptr<ACommand>> &GetCommands() const { return m_Commands.GetElements(); }
 	};
 }

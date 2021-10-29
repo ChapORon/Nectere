@@ -26,7 +26,7 @@ namespace Nectere
 			m_Acceptor.async_accept([this](boost::system::error_code ec, boost::asio::ip::tcp::socket socket) {
 				if (!ec)
 				{
-					if (auto networkUser = m_UserManager->AddUser<BoostNetworkUser>(new BoostNetworkUser::BoostSocket{ m_IOContext, std::move(socket) }))
+					if (auto networkUser = m_UserManager->AddUser<BoostNetworkUser>(m_IOContext, std::move(socket)))
 					{
 						uint16_t id = networkUser->GetID();
 						LOG(LogType::Standard, "New session opened with ID: ", id);

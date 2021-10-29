@@ -4,7 +4,13 @@
 
 namespace Nectere
 {
-	ACommand::ACommand(uint16_t id) : m_CommandID(id) {}
+	ACommand::ACommand(uint16_t id, const std::string &name) : m_CommandID(id), m_Name(name) {}
+
+	void ACommand::SetApplication(const Ptr<Application> &application, const Ptr<IApplicationManager> &applicationManager)
+	{
+		m_Application = application;
+		m_ApplicationManager = applicationManager;
+	}
 
 	void ACommand::SendEvent(uint16_t id, const std::string &data)
 	{

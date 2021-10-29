@@ -120,7 +120,7 @@ namespace Nectere
 		static AParameter *Fetch(const std::string &);
 
 		template <typename t_ParameterType, typename ...t_Arg>
-		static void Add(t_Arg&&... args) { AddParameter(new t_ParameterType(args...)); }
+		static void Add(t_Arg&&... args) { AddParameter(new t_ParameterType(std::forward<t_Arg>(args)...)); }
 
 		static bool Have(const std::string &parameter);
 		static bool LoadConfiguration(int argc, char **arg);

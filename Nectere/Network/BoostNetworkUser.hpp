@@ -15,13 +15,6 @@ namespace Nectere
 		{
 			friend class BoostNetworkServer;
 		private:
-			struct BoostSocket
-			{
-				boost::asio::io_context &m_IOContext;
-				boost::asio::ip::tcp::socket m_Socket;
-			};
-
-		private:
 			char m_HeaderData[sizeof(Header)];
 			char *m_MessageData{ nullptr };
 
@@ -29,16 +22,16 @@ namespace Nectere
 			std::atomic_bool m_Closed;
 			Header m_Header;
 			std::string m_Message;
-			BoostSocket *m_BoostSocket;
+			boost::asio::io_context &m_IOContext;
+			boost::asio::ip::tcp::socket m_Socket;
 
 		private:
 			void ReadHeader();
 			void ReadData();
 			void Receive(const Event &) override;
-			void InternalInit(boost::asio::io_context &, boost::asio::ip::tcp::socket);
 
 		public:
-			BoostNetworkUser(BoostSocket *);
+			BoostNetworkUser(boost::asio::io_context &, boost::asio::ip::tcp::socket);
 			void Close();
 			~BoostNetworkUser();
 		};

@@ -115,7 +115,7 @@ namespace Nectere
 			}
 			void Add(const Node &, bool = false);
 			void Add(const std::string &, const Node &, bool = false);
-			void Add(const std::string &, const std::vector<Node> &, bool);
+			void Add(const std::string &, const std::vector<Node> &, bool = false);
 			void Emplace(const Node &);
 			//=========================Suppression=========================
 			bool Remove(const std::string &);

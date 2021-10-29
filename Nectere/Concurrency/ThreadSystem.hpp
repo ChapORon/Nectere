@@ -45,7 +45,7 @@ namespace Nectere
             template <typename t_Object>
             void AddTask(t_Object *obj, TaskResult(t_Object:: *fct)()) { AddTask<FunctorTask<t_Object>>(obj, fct); }
             template <typename t_Task, typename ...t_Arg>
-            void AddTask(t_Arg&&... args) { AddTask(new t_Task(args...)); }
+            void AddTask(t_Arg&&... args) { AddTask(new t_Task(std::forward<t_Arg>(args)...)); }
             void AddTask(const std::function<TaskResult()> &taskToAdd) { AddTask<CallableTask>(taskToAdd); }
             void Start();
             void Stop();

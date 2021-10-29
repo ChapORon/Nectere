@@ -12,7 +12,14 @@ namespace Nectere
 {
 	class ThreadSystem;
 	class UserManager;
-	class ApplicationManager final
+
+	class IApplicationManager
+	{
+	public:
+		virtual const std::vector<Ptr<Application>> &GetApplications() const = 0;
+	};
+
+	class ApplicationManager final : public IApplicationManager
 	{
 		friend class Application;
 		friend class UserManager;
@@ -20,7 +27,6 @@ namespace Nectere
 		UserManager *m_UserManager;
 		IDGenerator m_ApplicationIDGenerator;
 		UIDSet<Application> m_Applications;
-		UIDSet<ACommand> m_Commands;
 		std::unordered_map<std::string, std::pair<DynamicLibrary *, Application *>> m_LoadedLibrary;
 
 	private:
@@ -32,6 +38,7 @@ namespace Nectere
 	public:
 		ApplicationManager(UserManager *);
 		Ptr<Application> CreateNewApplication(const std::string &);
+		const std::vector<Ptr<Application>> &GetApplications() const override { return m_Applications.GetElements(); }
         void Update();
 		void LoadApplications();
 		~ApplicationManager();

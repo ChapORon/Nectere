@@ -11,9 +11,10 @@ if(Boost_FOUND)
     link_directories(${Boost_LIBRARY_DIRS})
 
     set(SOURCE_FILES
-            ${CMAKE_CURRENT_SOURCE_DIR}/Connection.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/Connection.hpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/Defines.hpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/NecterePrompt.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/NecterePrompt.hpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/Prompt.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/Prompt.hpp
             ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
 
     add_executable (${NAME} ${SOURCE_FILES})

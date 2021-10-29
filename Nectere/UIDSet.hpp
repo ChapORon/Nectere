@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include "Ptr.hpp"
 
 namespace Nectere
 {
@@ -9,16 +10,19 @@ namespace Nectere
 	class UIDSet
 	{
 	private:
+		Ptr<t_IDType> m_Null;
 		std::vector<t_IDType *> m_Elements;
+		std::vector<Ptr<t_IDType>> m_PtrElements;
 
 	private:
 		void RemoveAt(size_t pos)
 		{
 			delete(m_Elements[pos]);
 			m_Elements.erase(m_Elements.begin() + pos);
+			m_PtrElements.erase(m_PtrElements.begin() + pos);
 		}
 
-		size_t Search(uint16_t id, size_t &left, size_t &right)
+		size_t Search(uint16_t id, size_t &left, size_t &right) const
 		{
 			left = 0;
 			right = m_Elements.size() - 1;
@@ -49,7 +53,8 @@ namespace Nectere
 		}
 
 	public:
-		const std::vector<t_IDType *> &GetElements() const { return m_Elements; }
+		const std::vector<Ptr<t_IDType>> &GetElements() const {return m_PtrElements;}
+
 		bool Add(t_IDType *element)
 		{
 			if (element == nullptr)
@@ -57,6 +62,7 @@ namespace Nectere
 			if (m_Elements.empty())
 			{
 				m_Elements.emplace_back(element);
+				m_PtrElements.emplace_back(Ptr(element));
 				return true;
 			}
 			size_t left, right;
@@ -67,18 +73,20 @@ namespace Nectere
 				if (id < m_Elements[left]->GetID())
 				{
 					m_Elements.insert(m_Elements.begin() + left, element);
+					m_PtrElements.insert(m_PtrElements.begin() + left, Ptr(element));
 					return true;
 				}
 				else if (id > m_Elements[right]->GetID())
 				{
 					m_Elements.insert(m_Elements.begin() + right + 1, element);
+					m_PtrElements.insert(m_PtrElements.begin() + right + 1, Ptr(element));
 					return true;
 				}
 			}
 			return false;
 		}
 
-		bool Find(uint16_t id)
+		bool Find(uint16_t id) const
 		{
 			if (m_Elements.empty())
 				return false;
@@ -89,15 +97,15 @@ namespace Nectere
 			return false;
 		}
 
-		t_IDType *Get(uint16_t id)
+		Ptr<t_IDType> &Get(uint16_t id)
 		{
 			if (m_Elements.empty())
-				return nullptr;
+				return m_Null;
 			size_t left, right;
 			size_t pos = Search(id, left, right);
 			if (pos != (m_Elements.size() + 1) && id == m_Elements[pos]->GetID())
-				return m_Elements[pos];
-			return nullptr;
+				return m_PtrElements[pos];
+			return m_Null;
 		}
 
 		bool Remove(uint16_t id)
@@ -116,15 +124,16 @@ namespace Nectere
 
 		void Clear()
 		{
+			m_PtrElements.clear();
 			for (t_IDType *element : m_Elements)
 				delete(element);
 			m_Elements.clear();
 		}
 
-		auto begin() { return m_Elements.begin(); }
-		auto begin() const { return m_Elements.begin(); }
-		auto end() { return m_Elements.end(); }
-		auto end() const { return m_Elements.end(); }
+		auto begin() { return m_PtrElements.begin(); }
+		auto begin() const { return m_PtrElements.begin(); }
+		auto end() { return m_PtrElements.end(); }
+		auto end() const { return m_PtrElements.end(); }
 
 		~UIDSet() { Clear(); }
 	};

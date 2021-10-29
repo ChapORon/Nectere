@@ -23,7 +23,7 @@ namespace Nectere
             Concurrency::ThreadSystem *m_ThreadSystem;
 
 		public:
-			ANectereCommand(uint16_t, Network::AServer *, Concurrency::ThreadSystem *);
+			ANectereCommand(uint16_t, const std::string &, Network::AServer *, Concurrency::ThreadSystem *);
 		};
 	}
 }

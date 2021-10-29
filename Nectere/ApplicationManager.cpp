@@ -14,15 +14,20 @@ namespace Nectere
 
 	void ApplicationManager::Receive(uint16_t sessionId, const Event &message)
 	{
-		if (Application *application = m_Applications.Get(message.m_ApplicationID))
+		if (Ptr<Application> &application = m_Applications.Get(message.m_ApplicationID))
 		{
+			bool eventExist = false;
 			LOG(LogType::Verbose, "Checking if application \"", application->GetName(), "\" can receive and treat event with code ", message.m_EventCode);
-			if (application->IsEventAllowed(message))
+			if (application->IsEventAllowed(message, eventExist))
 			{
 				LOG(LogType::Verbose, "Treating event");
 				application->Treat(sessionId, message);
 			}
+			else
+				SendEvent(sessionId, Event{ message.m_ApplicationID, message.m_EventCode, (eventExist) ? "Misformated data" : "No such event" });
 		}
+		else
+			SendEvent(sessionId, Event{ message.m_ApplicationID, message.m_EventCode, "No such application" });
 	}
 
 	void ApplicationManager::SendEvent(uint16_t id, const Event &event)
@@ -37,7 +42,7 @@ namespace Nectere
 
     Ptr<Application> ApplicationManager::CreateNewApplication(const std::string &applicationName)
     {
-        Application *application = new Application(m_ApplicationIDGenerator.GenerateID(), applicationName, this);
+        Application *application = new Application(m_ApplicationIDGenerator.GenerateID(), applicationName, Ptr<IApplicationManager>(this));
         m_Applications.Add(application);
         return Ptr(application);
     }
@@ -64,7 +69,7 @@ namespace Nectere
 			if (!applicationLoader)
 				return;
 			LOG(LogType::Standard, moduleName, ": Loading application");
-			Application *application = new Application(m_ApplicationIDGenerator.GenerateID(), name, this);
+			Application *application = new Application(m_ApplicationIDGenerator.GenerateID(), name, Ptr<IApplicationManager>(this));
 			applicationLoader(application);
 			m_LoadedLibrary[dynamicLibrary->GetPath()] = std::make_pair(dynamicLibrary, application);
 			m_Applications.Add(application);

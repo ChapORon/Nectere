@@ -27,7 +27,7 @@ namespace Nectere
 	public:
 		UserManager();
 		template <typename t_User, typename ...t_Arg>
-		Ptr<t_User> AddUser(t_Arg&&... args) { return Ptr(dynamic_cast<t_User *>(InternalAddUser(new t_User(std::move(args)...)))); }
+		Ptr<t_User> AddUser(t_Arg&&... args) { return Ptr(dynamic_cast<t_User *>(InternalAddUser(new t_User(std::forward<t_Arg>(args)...)))); }
 		void RemoveUser(uint16_t);
 		Ptr<ApplicationManager> GetApplicationManager() { return Ptr(m_ApplicationManager); }
 		void Update();

@@ -44,7 +44,7 @@ namespace Nectere
 
 	void UserManager::SendEvent(uint16_t id, const Event &event)
 	{
-		if (AUser *user = m_Users.Get(id))
+		if (Ptr<AUser> &user = m_Users.Get(id))
 			user->Receive(event);
 	}
 

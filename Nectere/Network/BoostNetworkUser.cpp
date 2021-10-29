@@ -7,16 +7,17 @@ namespace Nectere
 {
 	namespace Network
 	{
-		BoostNetworkUser::BoostNetworkUser(BoostSocket *boostSocket) :
+		BoostNetworkUser::BoostNetworkUser(boost::asio::io_context &ioContext, boost::asio::ip::tcp::socket socket) :
 			m_Closed(false),
-			m_BoostSocket(boostSocket)
+			m_IOContext(ioContext),
+			m_Socket(std::move(socket))
 		{
 			ReadHeader();
 		}
 
 		void BoostNetworkUser::ReadHeader()
 		{
-			boost::asio::async_read(m_BoostSocket->m_Socket, boost::asio::buffer(m_HeaderData, sizeof(Header)), [this](boost::system::error_code ec, size_t length) {
+			boost::asio::async_read(m_Socket, boost::asio::buffer(m_HeaderData, sizeof(Header)), [this](boost::system::error_code ec, size_t length) {
 				if (!ec && length == sizeof(Header))
 				{
 					LOG(LogType::Standard, '[', GetID(), "] Decoding header");
@@ -34,7 +35,7 @@ namespace Nectere
 
 		void BoostNetworkUser::ReadData()
 		{
-			boost::asio::async_read(m_BoostSocket->m_Socket, boost::asio::buffer(m_MessageData, m_Header.messageLength), [this](boost::system::error_code ec, size_t length) {
+			boost::asio::async_read(m_Socket, boost::asio::buffer(m_MessageData, m_Header.messageLength), [this](boost::system::error_code ec, size_t length) {
 				if (!ec)
 				{
 					if (m_MessageData)
@@ -57,7 +58,7 @@ namespace Nectere
 
 		void BoostNetworkUser::Receive(const Event &event)
 		{
-			boost::asio::post(m_BoostSocket->m_IOContext, [this, event]() {
+			boost::asio::post(m_IOContext, [this, event]() {
 				Header header;
 				header.applicationID = event.m_ApplicationID;
 				header.messageType = event.m_EventCode;
@@ -67,7 +68,7 @@ namespace Nectere
 				char *data = new char[length]();
 				std::memcpy(data, &header, sizeof(Header));
 				std::memcpy(&data[sizeof(Header)], event.m_Data.data(), event.m_Data.length());
-				boost::asio::async_write(m_BoostSocket->m_Socket, boost::asio::buffer(data, length), [this, data](boost::system::error_code ec, size_t) {
+				boost::asio::async_write(m_Socket, boost::asio::buffer(data, length), [this, data](boost::system::error_code ec, size_t) {
 					delete[](data);
 					if (!ec)
 					{
@@ -84,7 +85,7 @@ namespace Nectere
 			if (!m_Closed.load())
 			{
 				LOG(LogType::Standard, '[', GetID(), "] Closing network session");
-				boost::asio::post(m_BoostSocket->m_IOContext, [this]() { m_BoostSocket->m_Socket.close(); });
+				boost::asio::post(m_IOContext, [this]() { m_Socket.close(); });
 				//m_Handler->CloseSession(m_SessionID); #todo
 				m_Closed.store(true);
 			}
@@ -95,8 +96,6 @@ namespace Nectere
 			Close();
 			if (m_MessageData)
 				delete[](m_MessageData);
-			if (m_BoostSocket)
-				delete(m_BoostSocket);
 		}
 	}
 }

@@ -190,10 +190,18 @@ namespace Nectere
 			}
 			else
 			{
-				for (const Node &value : values)
+				if (values.size() == 1)
 				{
-					Node newNode = value;
+					Node newNode = values[0];
 					newNode.SetName(name);
+					m_Childs.emplace_back(newNode);
+				}
+				else
+				{
+					Node newNode;
+					newNode.SetName(name);
+					for (const Node &value : values)
+						newNode.m_Childs.emplace_back(value);
 					m_Childs.emplace_back(newNode);
 				}
 			}
