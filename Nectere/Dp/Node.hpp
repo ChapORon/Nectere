@@ -1,9 +1,11 @@
 #pragma once
 
 #include <ostream>
+#include <regex>
 #include <string>
 #include <vector>
 #include "Dp/Serializer.hpp"
+#include "StringUtils.hpp"
 
 namespace Nectere
 {
@@ -15,6 +17,15 @@ namespace Nectere
 			static const Node null;
 			typedef std::vector<Node>::iterator iterator;
 			typedef std::vector<Node>::const_iterator const_iterator;
+
+		public:
+			enum class AddType : short
+			{
+				INSERT,
+				REPLACE,
+				MERGE,
+				ADD
+			};
 
 		private:
 			bool m_IsNullNode;
@@ -28,15 +39,17 @@ namespace Nectere
 		private:
 			explicit Node(bool);
 			int ExtractPos(std::string &) const;
-			void ReplaceAt(const std::string &, int, const std::vector<Node> &);
-			void InsertAt(const std::string &, int, const std::vector<Node> &);
-			template <typename t_NativeTypeToAdd>
-			void AddNativeType(const std::string &key, const std::vector<t_NativeTypeToAdd> &values, bool replace = false)
+			void InternalAdd(const std::string &, const Node &, AddType);
+			void InternalAdd(const std::string &, const std::vector<Node> &, AddType);
+			template <typename t_TypeToAdd>
+			inline void InternalAdd(const std::string &key, const t_TypeToAdd &value, AddType type) { InternalAdd(key, Serializer<t_TypeToAdd>().ToNode(value), type); }
+			template <typename t_TypeToAdd>
+			void InternalAdd(const std::string &key, const std::vector<t_TypeToAdd> &values, AddType type)
 			{
 				std::vector<Node> datas;
-				for (const t_NativeTypeToAdd &value : values)
-					datas.emplace_back(Node("", std::to_string(value)));
-				Add(key, datas, replace);
+				for (const t_TypeToAdd &value : values)
+					datas.emplace_back(Serializer<t_TypeToAdd>().ToNode(value));
+				InternalAdd(key, datas, type);
 			}
 
 		public:
@@ -49,122 +62,56 @@ namespace Nectere
 			Node &operator=(const Node &);
 			//=========================Comparison operator=========================
 			bool operator==(const Node &) const;
-			bool operator!=(const Node &) const;
+			inline bool operator!=(const Node &other) const { return !(other == *this); }
 			//=========================Iteration operator=========================
-			iterator begin();
-			const_iterator begin() const;
-			iterator end();
-			const_iterator end() const;
+			inline iterator begin() { return m_Childs.begin(); }
+			inline const_iterator begin() const { return m_Childs.cbegin(); }
+			inline iterator end() { return m_Childs.end(); }
+			inline const_iterator end() const { return m_Childs.cend(); }
 			//=========================Getter/Setter=========================
-			bool IsNull() const;
-			void SetNull(bool);
-			bool IsString() const;
-			void SetIsString(bool);
-			bool IsNotAString() const;
-			void SetIsNotAString(bool);
-			bool HaveValue() const;
-			const std::string &GetName() const;
-			void SetName(const std::string &);
-			const std::string &GetValue() const;
-			void SetValue(const std::string &);
+			inline bool IsNull() const { return m_Null; }
+			inline void SetNull(bool value) { m_Null = value; }
+			inline bool IsString() const { return m_IsString; }
+			inline void SetIsString(bool value) { m_IsString = value; }
+			inline bool IsNotAString() const { return m_IsNotAString; }
+			inline void SetIsNotAString(bool value) { m_IsNotAString = value; }
+			inline bool HaveValue() const { return !m_Value.empty(); }
+			inline const std::string &GetName() const { return m_Name; }
+			inline void SetName(const std::string &name) { m_Name = name; }
+			inline const std::string &GetValue() const { return m_Value; }
+			inline void SetValue(const std::string &value) { m_Value = value; }
 			//=========================Element getter=========================
 			const Node &GetNode(const std::string &) const;
 			template <typename t_TypeToGet>
-			t_TypeToGet Get(const std::string &key) const { return static_cast<t_TypeToGet>(GetNode(key)); }
+			inline t_TypeToGet Get(const std::string &key) const { return static_cast<t_TypeToGet>(GetNode(key)); }
 			//=========================Insertion=========================
 			template <typename t_TypeToAdd>
-			void Add(const std::string &key, const t_TypeToAdd &value, bool replace = false)
-			{
-				std::vector<t_TypeToAdd> values;
-				values.emplace_back(value);
-				Add(key, values, replace);
-			}
+			inline void Add(const std::string &key, t_TypeToAdd &&value) { InternalAdd(key, std::forward<t_TypeToAdd>(value), AddType::ADD); }
+			inline void Add(const Node &value) { InternalAdd(value.GetName(), value, AddType::ADD); }
 			template <typename t_TypeToAdd>
-			void Add(const std::string &key, const std::vector<t_TypeToAdd> &values, bool replace = false)
-			{
-				std::vector<Node> datas;
-				for (const t_TypeToAdd &value : values)
-					datas.emplace_back(Serializer<t_TypeToAdd>().ToNode(value));
-				Add(key, datas, replace);
-			}
-			template <> void Add<bool>(const std::string &key, const std::vector<bool> &values, bool replace)
-			{
-				std::vector<Node> datas;
-				for (bool value : values)
-					datas.emplace_back(Node("", value ? "true" : "false"));
-				Add(key, datas, replace);
-			}
-			template <> void Add<char>(const std::string &key, const std::vector<char> &values, bool replace) { AddNativeType(key, values, replace); }
-			template <> void Add<int>(const std::string &key, const std::vector<int> &values, bool replace) { AddNativeType(key, values, replace); }
-			template <> void Add<float>(const std::string &key, const std::vector<float> &values, bool replace) { AddNativeType(key, values, replace); }
-			template <> void Add<double>(const std::string &key, const std::vector<double> &values, bool replace) { AddNativeType(key, values, replace); }
-			template <> void Add<long>(const std::string &key, const std::vector<long> &values, bool replace) { AddNativeType(key, values, replace); }
-			template <> void Add<char *>(const std::string &key, const std::vector<char *> &values, bool replace)
-			{
-				std::vector<Node> datas;
-				for (const char *value : values)
-					datas.emplace_back(Node("", std::string(value)));
-				Add(key, datas, replace);
-			}
-			template <> void Add<std::string>(const std::string &key, const std::vector<std::string> &values, bool replace)
-			{
-				std::vector<Node> datas;
-				for (const std::string &value : values)
-					datas.emplace_back(Node("", value));
-				Add(key, datas, replace);
-			}
-			void Add(const Node &, bool = false);
-			void Add(const std::string &, const Node &, bool = false);
-			void Add(const std::string &, const std::vector<Node> &, bool = false);
-			void Emplace(const Node &);
+			inline void Insert(const std::string &key, t_TypeToAdd &&value) { InternalAdd(key, std::forward<t_TypeToAdd>(value), AddType::INSERT); }
+			inline void Insert(const Node &value) { InternalAdd(value.GetName(), value, AddType::INSERT); }
+			template <typename t_TypeToAdd>
+			inline void Replace(const std::string &key, t_TypeToAdd &&value) { InternalAdd(key, std::forward<t_TypeToAdd>(value), AddType::REPLACE); }
+			inline void Replace(const Node &value) { InternalAdd(value.GetName(), value, AddType::REPLACE); }
+			template <typename t_TypeToAdd>
+			inline void Merge(const std::string &key, t_TypeToAdd &&value) { InternalAdd(key, std::forward<t_TypeToAdd>(value), AddType::MERGE); }
+			inline void Merge(const Node &value) { InternalAdd(value.GetName(), value, AddType::MERGE); }
+
+			inline void Emplace(const Node &value) { m_Childs.emplace_back(value); }
 			//=========================Suppression=========================
 			bool Remove(const std::string &);
 			//=========================Analysis=========================
 			bool Find(const std::string &) const;
-			bool IsNumerical() const;
-			bool IsBoolean() const;
-			size_t Size() const;
-			bool HaveChild() const;
+			inline bool IsNumerical() const { return std::regex_match(m_Value, std::regex("^[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?$")); }
+			inline bool IsBoolean() const { return m_Value == "true" || m_Value == "false"; }
+			inline size_t Size() const { return m_Childs.size(); }
+			inline bool HaveChild() const { return !m_Childs.empty(); }
 			bool HaveNamedChild() const;
-			bool IsEmpty() const;
+			inline bool IsEmpty() const { return m_Value.empty() && m_Childs.empty(); }
 			//=========================Cast operator=========================
 			template <typename t_TypeToCastTo>
-			explicit operator t_TypeToCastTo() const
-			{
-				return Serializer<t_TypeToCastTo>().FromNode(*this);
-			}
-			explicit operator const std::string &() const
-			{
-				return m_Value;
-			}
-			explicit operator std::string() const
-			{
-				return m_Value;
-			}
-			explicit operator bool() const
-			{
-				return (m_Value == "true");
-			}
-			explicit operator char() const
-			{
-				return m_Value[0];
-			}
-			explicit operator int() const
-			{
-				return std::stoi(m_Value);
-			}
-			explicit operator float() const
-			{
-				return std::stof(m_Value);
-			}
-			explicit operator double() const
-			{
-				return std::stod(m_Value);
-			}
-			explicit operator long() const
-			{
-				return std::stol(m_Value);
-			}
+			inline explicit operator t_TypeToCastTo() const { return Serializer<t_TypeToCastTo>().FromNode(*this); }
 		};
 	}
 

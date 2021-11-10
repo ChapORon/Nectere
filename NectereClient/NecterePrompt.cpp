@@ -83,21 +83,21 @@ NecterePrompt::NecterePrompt(): Prompt("[]> "), m_IOContext(), m_Socket(m_IOCont
 
 void NecterePrompt::HandleConnect(const std::vector<std::string> &args)
 {
-	if (args.size() == 3)
+	if (args.size() == 2)
 	{
 		try
 		{
-			boost::asio::connect(m_Socket, m_Resolver.resolve(args[1], args[2]));
+			boost::asio::connect(m_Socket, m_Resolver.resolve(args[0], args[1]));
 			m_Connected = true;
-			m_IP = args[1];
-			m_Port = args[2];
+			m_IP = args[0];
+			m_Port = args[1];
 		}
 		catch (std::exception e)
 		{
-			std::cerr << "Cannot connect to " << args[1] << ':' << args[2] << ": " << e.what() << std::endl;
+			std::cerr << "Cannot connect to " << args[0] << ':' << args[1] << ": " << e.what() << std::endl;
 		}
 	}
-	else if (args.size() < 3)
+	else if (args.size() < 2)
 		std::cerr << "Error: Not enough argument: connect [ip] [port]" << std::endl;
 	else
 		std::cerr << "Error: Too much argument: connect [ip] [port]" << std::endl;
@@ -130,9 +130,9 @@ void NecterePrompt::HandleList()
 
 void NecterePrompt::HandleQuery(const std::vector<std::string> &args)
 {
-	if (args.size() == 2)
+	if (args.size() == 1)
 	{
-		std::string answer = Send(0, 601, args[1], true);
+		std::string answer = Send(0, 601, args[0], true);
 		std::stringstream ss{ answer };
 		boost::property_tree::ptree pt;
 		boost::property_tree::read_json(ss, pt);
@@ -143,7 +143,7 @@ void NecterePrompt::HandleQuery(const std::vector<std::string> &args)
 			std::cout << "- " << commandNameNode.get_value<std::string>() << " (" << commandIDNode.get_value<int>() << ')' << std::endl;
 		}
 	}
-	else if (args.size() < 2)
+	else if (args.size() < 1)
 		std::cerr << "Error: Not enough argument: query [application]" << std::endl;
 	else
 		std::cerr << "Error: Too much argument: query [application]" << std::endl;
@@ -152,16 +152,16 @@ void NecterePrompt::HandleQuery(const std::vector<std::string> &args)
 void NecterePrompt::HandleEvent(const std::vector<std::string> &args)
 {
 	size_t size = args.size();
-	if (size == 3 || size == 4)
+	if (size == 2 || size == 3)
 	{
 		try
 		{
-			int applicationID = std::stoi(args[1]);
+			int applicationID = std::stoi(args[0]);
 			try
 			{
-				int eventCode = std::stoi(args[2]);
-				if (size == 4)
-					std::cout << Send(applicationID, eventCode, args[3], true) << std::endl;
+				int eventCode = std::stoi(args[1]);
+				if (size == 3)
+					std::cout << Send(applicationID, eventCode, args[2], true) << std::endl;
 				else
 					std::cout << Send(applicationID, eventCode, "", true) << std::endl;
 			}
@@ -175,7 +175,7 @@ void NecterePrompt::HandleEvent(const std::vector<std::string> &args)
 			std::cerr << "Cannot send event to application: Misformated application id" << std::endl;
 		}
 	}
-	else if (args.size() < 3)
+	else if (args.size() < 2)
 		std::cerr << "Error: Not enough argument: event [application] [code] [optional:data]" << std::endl;
 	else
 		std::cerr << "Error: Too much argument: event [application] [code] [optional:data]" << std::endl;

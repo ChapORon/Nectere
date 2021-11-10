@@ -8,8 +8,12 @@ set(COMMAND_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/CommandListCommand.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/CommandListCommand.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/NectereEventCode.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ReloadAppCommand.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ReloadAppCommand.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/StopCommand.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/StopCommand.hpp)
+	${CMAKE_CURRENT_SOURCE_DIR}/StopCommand.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/UnloadAppCommand.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/UnloadAppCommand.hpp)
 	
 add_library(${NAME}-command ${COMMAND_SOURCES})
 target_link_libraries(${NAME}-command ${NAME}-network ${NAME}-dp)

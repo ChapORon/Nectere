@@ -64,7 +64,10 @@ void Prompt::TreatCommand(const std::string &command) const
 	{
 		auto command = m_Commands.find(args[0]);
 		if (command != m_Commands.end())
+		{
+			args.erase(args.begin());
 			command->second(args);
+		}
 		else
 		{
 			auto emptyCommand = m_EmptyCommands.find(args[0]);

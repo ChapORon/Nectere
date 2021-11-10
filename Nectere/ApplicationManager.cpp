@@ -1,12 +1,13 @@
 #include "ApplicationManager.hpp"
 
+#include <filesystem>
 #include "Command/StopCommand.hpp"
 #include "Configuration.hpp"
 #include "Logger.hpp"
 #include "UserManager.hpp"
 
 typedef const char *FUNCTION(ApplicationName)();
-typedef void FUNCTION(ApplicationLoader)(Nectere::Application *);
+typedef void FUNCTION(ApplicationLoader)(Nectere::Ptr<Nectere::Application>);
 
 namespace Nectere
 {
@@ -47,68 +48,107 @@ namespace Nectere
         return Ptr(application);
     }
 
-	void ApplicationManager::LoadApplication(const std::filesystem::path &path)
+	bool ApplicationManager::LoadApplication(const std::string &path)
 	{
-		std::string absolutePath = std::filesystem::absolute(path).string();
-		std::string moduleName = path.filename().string();
-		auto lib = m_LoadedLibrary.find(absolutePath);
+		std::filesystem::path absolutePath = std::filesystem::absolute(path);
+		std::string absolutePathStr = absolutePath.string();
+		std::string moduleName = absolutePath.filename().string();
+		auto lib = m_LoadedLibrary.find(absolutePathStr);
 		if (lib == m_LoadedLibrary.end())
 		{
-			DynamicLibrary *dynamicLibrary = new DynamicLibrary(absolutePath);
-			if (!dynamicLibrary)
-				return;
+			DynamicLibrary *dynamicLibrary = new DynamicLibrary(absolutePathStr);
+			if (!dynamicLibrary || !(*dynamicLibrary))
+				return false;
 			LOG(LogType::Standard, moduleName, ": Module loaded");
 			ApplicationName applicationName = dynamicLibrary->Load<ApplicationName>("Nectere_ApplicationName");
 			if (!applicationName)
-				return;
+				return false;
 			std::string name = applicationName();
 			if (name.empty())
-				return;
+				return false;
 			LOG(LogType::Standard, moduleName, ": Application name is ", name);
 			ApplicationLoader applicationLoader = dynamicLibrary->Load<ApplicationLoader>("Nectere_ApplicationLoader");
 			if (!applicationLoader)
-				return;
+				return false;
 			LOG(LogType::Standard, moduleName, ": Loading application");
-			Application *application = new Application(m_ApplicationIDGenerator.GenerateID(), name, Ptr<IApplicationManager>(this));
-			applicationLoader(application);
-			m_LoadedLibrary[dynamicLibrary->GetPath()] = std::make_pair(dynamicLibrary, application);
-			m_Applications.Add(application);
-			LOG(LogType::Standard, moduleName, ": Application loaded");
+			if (Application *application = new Application(m_ApplicationIDGenerator.GenerateID(), name, Ptr<IApplicationManager>(this)))
+			{
+				applicationLoader(Ptr<Application>(application));
+				uint16_t applicationID = application->GetID();
+				m_LoadedLibrary[dynamicLibrary->GetPath()] = applicationID;
+				m_LoadedApplication[applicationID] = std::make_pair(dynamicLibrary, application);
+				m_Applications.Add(application);
+				LOG(LogType::Standard, moduleName, ": Application loaded");
+				return true;
+			}
 		}
-		else
+// 		else
+// 			return ReloadApplication((*lib).second);
+		return false;
+	}
+
+	bool ApplicationManager::UnloadApplication(uint16_t applicationID)
+	{
+		auto it = m_LoadedApplication.find(applicationID);
+		if (it != m_LoadedApplication.end())
 		{
-			DynamicLibrary *dynamicLibrary = (*lib).second.first;
-			Application *application = (*lib).second.second;
+			DynamicLibrary *dynamicLibrary = (*it).second.first;
+			m_LoadedLibrary.erase(m_LoadedLibrary.find(dynamicLibrary->GetPath()));
+			m_LoadedApplication.erase(it);
+			m_ApplicationIDGenerator.FreeID(applicationID);
+			m_Applications.Remove(applicationID);
+			return true;
+		}
+		return false;
+	}
+
+	bool ApplicationManager::ReloadApplication(uint16_t applicationID)
+	{
+		auto it = m_LoadedApplication.find(applicationID);
+		if (it != m_LoadedApplication.end())
+		{
+			DynamicLibrary *dynamicLibrary = (*it).second.first;
+			Application *application = (*it).second.second;
 			if (dynamicLibrary->CanReload())
 			{
+				Dp::Node root;
+				application->BeforeReloading(root);
 				dynamicLibrary->Reload();
-				if (!static_cast<bool>(dynamicLibrary))
+				if (!(*dynamicLibrary))
 				{
-					uint16_t applicationID = application->GetID();
-					m_ApplicationIDGenerator.FreeID(applicationID);
-					m_Applications.Remove(applicationID);
-					m_LoadedLibrary.erase(lib);
-					return;
+					UnloadApplication(applicationID);
+					return false;
 				}
-				application->BeforeReloading();
+				std::string moduleName = std::filesystem::path(dynamicLibrary->GetPath()).filename().string();
 				LOG(LogType::Standard, moduleName, ": Module reloaded");
 				ApplicationName applicationName = dynamicLibrary->Load<ApplicationName>("Nectere_ApplicationName");
 				if (!applicationName)
-					return;
+				{
+					UnloadApplication(applicationID);
+					return false;
+				}
 				std::string name = applicationName();
 				if (name.empty())
-					return;
+				{
+					UnloadApplication(applicationID);
+					return false;
+				}
 				application->SetName(name);
 				LOG(LogType::Standard, moduleName, ": New application name is ", name);
 				ApplicationLoader applicationLoader = dynamicLibrary->Load<ApplicationLoader>("Nectere_ApplicationLoader");
 				if (!applicationLoader)
-					return;
+				{
+					UnloadApplication(applicationID);
+					return false;
+				}
 				LOG(LogType::Standard, moduleName, ": Reloading application");
-				applicationLoader(application);
+				applicationLoader(Ptr<Application>(application));
 				LOG(LogType::Standard, moduleName, ": Application reloaded");
-				application->AfterReloading();
+				application->AfterReloading(root);
+				return true;
 			}
 		}
+		return false;
 	}
 
     void ApplicationManager::Update()
@@ -117,22 +157,9 @@ namespace Nectere
             application->Update();
     }
 
-	void ApplicationManager::LoadApplications()
-	{
-		try
-		{
-			for (const auto &entry : std::filesystem::directory_iterator("plugins"))
-			{
-				if (!entry.is_directory())
-					LoadApplication(entry.path());
-			}
-		}
-		catch (const std::exception &) {}
-	}
-
 	ApplicationManager::~ApplicationManager()
 	{
-		for (const auto &pair : m_LoadedLibrary)
+		for (const auto &pair : m_LoadedApplication)
 			delete(pair.second.first);
 	}
 }

@@ -10,7 +10,7 @@ namespace Nectere
 {
 	namespace Command
 	{
-		CommandListCommand::CommandListCommand(Network::AServer *server, Concurrency::ThreadSystem *threadSystem):
+		CommandListCommand::CommandListCommand(const Ptr<Network::AServer> &server, const Ptr<Concurrency::ThreadSystem> &threadSystem):
 			ANectereCommand(NECTERE_EVENT_CMD_LIST, "cmd-list", server, threadSystem) {}
 
 		bool CommandListCommand::IsValid(const std::string &value) const { return !value.empty(); }

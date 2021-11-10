@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ACommand.hpp"
+#include "Ptr.hpp"
 
 namespace Nectere
 {
@@ -19,11 +20,11 @@ namespace Nectere
 		class ANectereCommand: public ACommand
 		{
 		protected:
-			Network::AServer *m_Server;
-            Concurrency::ThreadSystem *m_ThreadSystem;
+			Ptr<Network::AServer> m_Server;
+			Ptr<Concurrency::ThreadSystem> m_ThreadSystem;
 
 		public:
-			ANectereCommand(uint16_t, const std::string &, Network::AServer *, Concurrency::ThreadSystem *);
+			ANectereCommand(uint16_t, const std::string &, const Ptr<Network::AServer> &, const Ptr<Concurrency::ThreadSystem> &);
 		};
 	}
 }

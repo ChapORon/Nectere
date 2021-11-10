@@ -6,10 +6,10 @@ namespace Nectere
 {
 	namespace Command
 	{
-		class CommandListCommand : public ANectereCommand
+		class ReloadAppCommand : public ANectereCommand
 		{
 		public:
-			CommandListCommand(const Ptr<Network::AServer> &, const Ptr<Concurrency::ThreadSystem> &);
+			ReloadAppCommand(const Ptr<Network::AServer> &, const Ptr<Concurrency::ThreadSystem> &);
 			bool IsValid(const std::string &) const override;
 			void Treat(uint16_t, const std::string &) override;
 		};

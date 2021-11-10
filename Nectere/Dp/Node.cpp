@@ -1,8 +1,6 @@
 #include "Dp/Node.hpp"
 
-#include <regex>
 #include <sstream>
-#include "StringUtils.hpp"
 
 namespace Nectere
 {
@@ -68,46 +66,6 @@ namespace Nectere
 			return std::stoi(number) - 1;
 		}
 
-		void Node::ReplaceAt(const std::string &name, int pos, const std::vector<Node> &values)
-		{
-			for (auto &child : m_Childs)
-			{
-				if (child.GetName() == name)
-				{
-					if (pos <= 0)
-					{
-						child.m_Childs.clear();
-						if (values.size() == 1)
-							child = values[0];
-						else
-						{
-							child.m_Value = "";
-							for (const Node &value : values)
-							{
-								Node newNode = value;
-								newNode.SetName("");
-								child.m_Childs.emplace_back(newNode);
-							}
-						}
-						return;
-					}
-					--pos;
-				}
-				if (pos == 0)
-					return;
-			}
-		}
-
-		size_t Node::Size() const
-		{
-			return m_Childs.size();
-		}
-
-		bool Node::HaveChild() const
-		{
-			return !m_Childs.empty();
-		}
-
 		bool Node::HaveNamedChild() const
 		{
 			for (const auto &child : m_Childs)
@@ -118,96 +76,19 @@ namespace Nectere
 			return false;
 		}
 
-		void Node::InsertAt(const std::string &name, int pos, const std::vector<Node> &values)
+		void Node::InternalAdd(const std::string &key, const std::vector<Node> &values, AddType addType)
 		{
-			bool found = false;
-			unsigned int firstFound = 0;
-			std::vector<Node> childs;
-			for (unsigned int n = 0; n != m_Childs.size(); ++n)
+			Node newNode;
+			for (const Node &value : values)
 			{
-				Node child = m_Childs[n];
-				if (child.GetName() == name)
-				{
-					if (!found)
-					{
-						firstFound = n;
-						found = true;
-					}
-					if (!childs.empty() || child.m_Childs.empty() || child.HaveNamedChild())
-					{
-						m_Childs.erase(m_Childs.begin() + n);
-						--n;
-						child.SetName("");
-						childs.emplace_back(child);
-					}
-					else
-					{
-						if (child.m_Childs.size() <= pos)
-						{
-							for (const Node &value : values)
-							{
-								Node newNode = value;
-								newNode.SetName("");
-								child.m_Childs.emplace_back(newNode);
-							}
-						}
-						else
-						{
-							for (const Node &value : values)
-							{
-								Node newNode = value;
-								newNode.SetName("");
-								child.m_Childs.insert(childs.begin() + pos, newNode);
-							}
-						}
-						return;
-					}
-				}
+				Node tmp = value;
+				tmp.SetName("");
+				newNode.m_Childs.emplace_back(tmp);
 			}
-			if (!childs.empty())
-			{
-				if (childs.size() <= pos)
-				{
-					for (const Node &value : values)
-					{
-						Node newNode = value;
-						newNode.SetName("");
-						childs.emplace_back(newNode);
-					}
-				}
-				else
-				{
-					for (const Node &value : values)
-					{
-						Node newNode = value;
-						newNode.SetName("");
-						childs.insert(childs.begin() + pos, newNode);
-					}
-				}
-				Node newNode(name);
-				newNode.m_Childs = childs;
-				m_Childs.insert(m_Childs.begin() + firstFound, newNode);
-			}
-			else
-			{
-				if (values.size() == 1)
-				{
-					Node newNode = values[0];
-					newNode.SetName(name);
-					m_Childs.emplace_back(newNode);
-				}
-				else
-				{
-					Node newNode;
-					newNode.SetName(name);
-					for (const Node &value : values)
-						newNode.m_Childs.emplace_back(value);
-					m_Childs.emplace_back(newNode);
-				}
-			}
+			InternalAdd(key, newNode, addType);
 		}
 
-		void Node::Add(const std::string &key, const std::vector<Node> &values, bool replace)
+		void Node::InternalAdd(const std::string &key, const Node &value, AddType addType)
 		{
 			unsigned long pos;
 			if (StringUtils::Find(key, '.', pos))
@@ -223,7 +104,7 @@ namespace Nectere
 							--nb;
 						if (nb < 0)
 						{
-							child.Add(newKey, values, replace);
+							child.InternalAdd(newKey, value, addType);
 							return;
 						}
 					}
@@ -231,47 +112,52 @@ namespace Nectere
 				if (nb > 0)
 					return;
 				m_Childs.emplace_back(Node(name));
-				m_Childs[m_Childs.size() - 1].Add(newKey, values, replace);
+				m_Childs[m_Childs.size() - 1].InternalAdd(newKey, value, addType);
 			}
 			else
 			{
-				//Rework here
 				std::string name = key;
 				int nb = ExtractPos(name);
-				if (replace)
-					ReplaceAt(name, nb, values);
-				else
-					InsertAt(name, nb, values);
+				unsigned int n = 0;
+				for (auto &child : m_Childs)
+				{
+					if (child.GetName() == name)
+					{
+						if (nb <= 0)
+						{
+							switch (addType)
+							{
+							case Nectere::Dp::Node::AddType::INSERT:
+							{
+								Node newNode = value;
+								newNode.SetName(name);
+								m_Childs.insert(m_Childs.begin() + n, newNode);
+								break;
+							}
+							case Nectere::Dp::Node::AddType::REPLACE:
+							{
+								child = value;
+								break;
+							}
+							case Nectere::Dp::Node::AddType::MERGE:
+							default:
+							{
+								for (const auto &valueChild : value.m_Childs)
+									child.m_Childs.emplace_back(valueChild);
+								break;
+							}
+							}
+							return;
+						}
+						--nb;
+					}
+					++n;
+				}
+				Node newNode = value;
+				newNode.SetName(name);
+				m_Childs.emplace_back(newNode);
+				
 			}
-		}
-
-		void Node::Add(const std::string &key, const Node &node, bool replace)
-		{
-			std::vector<Node> nodes;
-			nodes.emplace_back(node);
-			Add(key, nodes, replace);
-		}
-
-		void Node::Add(const Node &node, bool replace)
-		{
-			std::vector<Node> nodes;
-			nodes.emplace_back(node);
-			Add(node.GetName(), nodes, replace);
-		}
-
-		void Node::Emplace(const Node &node)
-		{
-			m_Childs.emplace_back(node);
-		}
-
-		const std::string &Node::GetValue() const
-		{
-			return (const std::string &)m_Value;
-		}
-
-		const std::string &Node::GetName() const
-		{
-			return m_Name;
 		}
 
 		bool Node::Find(const std::string &key) const
@@ -377,41 +263,6 @@ namespace Nectere
 			}
 		}
 
-		void Node::SetValue(const std::string &value)
-		{
-			m_Value = value;
-		}
-
-		bool Node::HaveValue() const
-		{
-			return !m_Value.empty();
-		}
-
-		bool Node::IsEmpty() const
-		{
-			return m_Value.empty() && m_Childs.empty();
-		}
-
-		Node::iterator Node::begin()
-		{
-			return m_Childs.begin();
-		}
-
-		Node::const_iterator Node::begin() const
-		{
-			return m_Childs.cbegin();
-		}
-
-		Node::iterator Node::end()
-		{
-			return m_Childs.end();
-		}
-
-		Node::const_iterator Node::end() const
-		{
-			return m_Childs.cend();
-		}
-
 		bool Node::operator==(const Node &other) const
 		{
 			if (m_IsNullNode && other.m_IsNullNode)
@@ -420,56 +271,6 @@ namespace Nectere
 				m_Null == other.m_Null &&
 				m_Value == other.m_Value &&
 				m_Childs == other.m_Childs;
-		}
-
-		bool Node::operator!=(const Node &other) const
-		{
-			return !(other == *this);
-		}
-
-		void Node::SetName(const std::string &name)
-		{
-			m_Name = name;
-		}
-
-		bool Node::IsNull() const
-		{
-			return m_Null;
-		}
-
-		void Node::SetNull(bool value)
-		{
-			m_Null = value;
-		}
-
-		bool Node::IsNumerical() const
-		{
-			return std::regex_match(m_Value, std::regex("^[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?$"));
-		}
-
-		bool Node::IsBoolean() const
-		{
-			return m_Value == "true" || m_Value == "false";
-		}
-
-		bool Node::IsString() const
-		{
-			return m_IsString;
-		}
-
-		void Node::SetIsString(bool value)
-		{
-			m_IsString = value;
-		}
-
-		bool Node::IsNotAString() const
-		{
-			return m_IsNotAString;
-		}
-
-		void Node::SetIsNotAString(bool value)
-		{
-			m_IsNotAString = value;
 		}
 	}
 

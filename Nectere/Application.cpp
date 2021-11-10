@@ -64,21 +64,21 @@ namespace Nectere
 		m_UpdateElapsedTime = std::chrono::system_clock::now();
 	}
 
-	void Application::BeforeReloading()
+	void Application::BeforeReloading(Dp::Node &root)
 	{
 		m_IsReloading.store(true);
 		m_Commands.Clear();
 		if (m_Handler != nullptr)
 		{
-			m_Handler->OnBeforeReload();
+			m_Handler->OnBeforeReload(root);
 			m_Handler = nullptr;
 		}
 	}
 
-	void Application::AfterReloading()
+	void Application::AfterReloading(const Dp::Node &root)
 	{
 		m_IsReloading.store(false);
 		if (m_Handler != nullptr)
-			m_Handler->OnAfterReload();
+			m_Handler->OnAfterReload(root);
 	}
 }

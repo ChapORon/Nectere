@@ -8,8 +8,8 @@ static void HandleClear()
 
 static void HandlePrint(const std::vector<std::string> &args)
 {
-	for (unsigned int n = 1; n < args.size(); ++n)
-		std::cout << args[n] << std::endl;
+	for (const auto &arg : args)
+		std::cout << arg << std::endl;
 }
 
 int main()

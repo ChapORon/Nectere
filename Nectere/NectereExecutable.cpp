@@ -1,9 +1,12 @@
 #include "NectereExecutable.hpp"
 
+#include <filesystem>
 #include "ApplicationManager.hpp"
 #include "Command/ApplicationListCommand.hpp"
 #include "Command/CommandListCommand.hpp"
+#include "Command/ReloadAppCommand.hpp"
 #include "Command/StopCommand.hpp"
+#include "Command/UnloadAppCommand.hpp"
 #include "Concurrency/ThreadSystem.hpp"
 #include "Configuration.hpp"
 #include "Parameters/LogPathParameter.hpp"
@@ -35,6 +38,7 @@ namespace Nectere
 	{
 		if (m_ThreadSystem = new Concurrency::ThreadSystem())
 		{
+			Ptr<Concurrency::ThreadSystem> threadSystemPtr(m_ThreadSystem);
 			m_ThreadSystem->Start();
 			InitConfiguration();
 			if (m_UserManager = new UserManager())
@@ -45,16 +49,24 @@ namespace Nectere
 					{
 						if (m_Server = Network::MakeServer(Configuration::Get<int>("Network.Port"), m_ThreadSystem, m_UserManager))
 						{
+							Ptr<Network::AServer> serverPtr(m_Server);
 							if (auto application = applicationManager->CreateNewApplication("Nectere"))
 							{
-								application->AddCommand<Command::ApplicationListCommand>(m_Server, m_ThreadSystem);
-								application->AddCommand<Command::CommandListCommand>(m_Server, m_ThreadSystem);
-								application->AddCommand<Command::StopCommand>(m_Server, m_ThreadSystem);
+								application->AddCommand<Command::ApplicationListCommand>(serverPtr, threadSystemPtr);
+								application->AddCommand<Command::CommandListCommand>(serverPtr, threadSystemPtr);
+								application->AddCommand<Command::ReloadAppCommand>(serverPtr, threadSystemPtr);
+								application->AddCommand<Command::StopCommand>(serverPtr, threadSystemPtr);
+								application->AddCommand<Command::UnloadAppCommand>(serverPtr, threadSystemPtr);
 							}
-							applicationManager->CreateNewApplication("Dummy 1");
-							applicationManager->CreateNewApplication("Dummy 2");
-							applicationManager->CreateNewApplication("Dummy 3");
-							applicationManager->LoadApplications();
+							try
+							{
+								for (const auto &entry : std::filesystem::directory_iterator("plugins"))
+								{
+									if (!entry.is_directory())
+										applicationManager->LoadApplication(entry.path().string());
+								}
+							}
+							catch (const std::exception &) {}
 							m_ThreadSystem->AddTask([=]() { return Update(); });
 							if (m_Server->Start())
 								m_ThreadSystem->Await();

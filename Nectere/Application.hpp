@@ -49,8 +49,8 @@ namespace Nectere
 		bool IsEventAllowed(const Event &, bool &);
 		void Treat(uint16_t, const Event &);
 		void Update();
-		void BeforeReloading();
-		void AfterReloading();
+		void BeforeReloading(Dp::Node &);
+		void AfterReloading(const Dp::Node &);
 		const std::vector<Ptr<ACommand>> &GetCommands() const { return m_Commands.GetElements(); }
 	};
 }
