@@ -4,17 +4,16 @@
 #include <regex>
 #include <string>
 #include <vector>
+#include "Dp/nectere_dp_export.h"
 #include "Dp/Serializer.hpp"
-#include "StringUtils.hpp"
 
 namespace Nectere
 {
 	namespace Dp
 	{
-		class Node final
+		class NECTEREDP_EXPORT Node final
 		{
 		public:
-			static const Node null;
 			typedef std::vector<Node>::iterator iterator;
 			typedef std::vector<Node>::const_iterator const_iterator;
 
@@ -32,12 +31,12 @@ namespace Nectere
 			bool m_Null;
 			bool m_IsString;
 			bool m_IsNotAString;
+			bool m_IsArray;
 			std::string m_Name;
 			std::string m_Value;
 			std::vector<Node> m_Childs;
 
 		private:
-			explicit Node(bool);
 			int ExtractPos(std::string &) const;
 			void InternalAdd(const std::string &, const Node &, AddType);
 			void InternalAdd(const std::string &, const std::vector<Node> &, AddType);
@@ -55,6 +54,7 @@ namespace Nectere
 		public:
 			//=========================Constructor=========================
 			Node();
+			explicit Node(bool); //Null constructor
 			explicit Node(const char *);
 			explicit Node(const std::string &);
 			Node(const std::string &, const std::string &);
@@ -69,12 +69,16 @@ namespace Nectere
 			inline iterator end() { return m_Childs.end(); }
 			inline const_iterator end() const { return m_Childs.cend(); }
 			//=========================Getter/Setter=========================
+			inline bool IsNullNode() const { return m_IsNullNode; }
+			inline bool IsNotNullNode() const { return !m_IsNullNode; }
 			inline bool IsNull() const { return m_Null; }
 			inline void SetNull(bool value) { m_Null = value; }
 			inline bool IsString() const { return m_IsString; }
 			inline void SetIsString(bool value) { m_IsString = value; }
 			inline bool IsNotAString() const { return m_IsNotAString; }
 			inline void SetIsNotAString(bool value) { m_IsNotAString = value; }
+			inline bool IsArray() const { return m_IsArray; }
+			inline void SetIsArray(bool value) { m_IsArray = value; }
 			inline bool HaveValue() const { return !m_Value.empty(); }
 			inline const std::string &GetName() const { return m_Name; }
 			inline void SetName(const std::string &name) { m_Name = name; }
@@ -84,6 +88,14 @@ namespace Nectere
 			const Node &GetNode(const std::string &) const;
 			template <typename t_TypeToGet>
 			inline t_TypeToGet Get(const std::string &key) const { return static_cast<t_TypeToGet>(GetNode(key)); }
+			template <typename t_TypeToGet>
+			inline t_TypeToGet Get(const std::string &key, const t_TypeToGet &defaultValue) const
+			{
+				Dp::Node node = GetNode(key);
+				if (node.IsNotNullNode())
+					return static_cast<t_TypeToGet>(node);
+				return defaultValue;
+			}
 			//=========================Insertion=========================
 			template <typename t_TypeToAdd>
 			inline void Add(const std::string &key, t_TypeToAdd &&value) { InternalAdd(key, std::forward<t_TypeToAdd>(value), AddType::ADD); }
@@ -115,5 +127,5 @@ namespace Nectere
 		};
 	}
 
-	std::ostream &operator<<(std::ostream &, const Dp::Node &);
+	NECTEREDP_EXPORT std::ostream &operator<<(std::ostream &, const Dp::Node &);
 }

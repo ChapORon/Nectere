@@ -153,7 +153,7 @@ namespace Nectere
 					newUnit = new Unit(variable.m_Name, variable.m_Type, variable.m_DefaultValue, m_Helper);
 				else if (variableTypeName == definition->m_TypeName)
 				{
-					if (Nectere::Configuration::Is("ScriptEngine.DoSmartBuild", true))
+					if (GetConfiguration().Is("ScriptEngine.DoSmartBuild", true))
 						newUnit = new Unit(variable.m_Name, definition, false, variable.m_DefaultValue, m_Helper);
 					else
 					{
@@ -163,7 +163,7 @@ namespace Nectere
 				}
 				else if (auto *definitionType = definition->GetDefinitionOf(variableTypeName))
 				{
-					if (Nectere::Configuration::Is("ScriptEngine.DoSmartBuild", true))
+					if (GetConfiguration().Is("ScriptEngine.DoSmartBuild", true))
 						newUnit = new Unit(variable.m_Name, definitionType, false, variable.m_DefaultValue, m_Helper);
 					else
 						newUnit = new Unit(variable.m_Name, definitionType, true, variable.m_DefaultValue, m_Helper);
@@ -350,7 +350,7 @@ namespace Nectere
 						{
 							if (auto *definitionType = m_Helper.GetObjectDefinition(arrayType->GetName()))
 							{
-								if (Nectere::Configuration::Is("ScriptEngine.DoSmartBuild", true))
+								if (GetConfiguration().Is("ScriptEngine.DoSmartBuild", true))
 									newUnit = new Unit(definitionType, false, "", m_Helper);
 								else
 									newUnit = new Unit(definitionType, true, "", m_Helper);
@@ -520,9 +520,9 @@ namespace Nectere
 		std::string Unit::ToString() const
 		{
 			std::stringstream prefix;
-			if (Nectere::Configuration::Is("ScriptEngine.DisplayTag", true) && HaveTags())
+			if (GetConfiguration().Is("ScriptEngine.DisplayTag", true) && HaveTags())
 				prefix << TagToString() << ' ';
-			if (Nectere::Configuration::Is("ScriptEngine.DisplayName", true))
+			if (GetConfiguration().Is("ScriptEngine.DisplayName", true))
 				prefix << m_Name << ": ";
 			if (m_Error)
 				prefix << "ERROR";

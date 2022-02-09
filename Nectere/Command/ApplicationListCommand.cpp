@@ -9,12 +9,11 @@ namespace Nectere
 {
 	namespace Command
 	{
-		ApplicationListCommand::ApplicationListCommand(const Ptr<Network::AServer> &server, const Ptr<Concurrency::ThreadSystem> &threadSystem):
-			ANectereCommand(NECTERE_EVENT_APP_LIST, "app-list", server, threadSystem) {}
+		ApplicationListCommand::ApplicationListCommand(): ACommand(NECTERE_EVENT_APP_LIST, "app-list") {}
 
 		bool ApplicationListCommand::IsValid(const std::string &) const { return true; }
 
-		void ApplicationListCommand::Treat(uint16_t sessionId, const std::string &)
+		void ApplicationListCommand::Treat(uint16_t sessionId, uint16_t, const std::string &)
 		{
 			std::vector<Dp::Node> applications;
 			for (Ptr<Application> application : m_ApplicationManager->GetApplications())

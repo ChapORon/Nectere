@@ -7,16 +7,57 @@ namespace Nectere
 {
 	namespace Dp
 	{
-		Json::EJsonElementType Json::GetType(const Node &node)
+		const Node NULL_NODE = Node(true);
+
+		void Str(const Node &, Result &);
+		void Str(const Node &, Result &, bool);
+		Node LoadNode(const std::string &, size_t &, const std::string &);
+
+		enum class EJsonElementType : int
 		{
-			if (!node.HaveChild())
-				return EJsonElementType::Value;
-			else if (node.HaveNamedChild())
-				return EJsonElementType::Object;
-			return EJsonElementType::Array;
+			Object,
+			Value,
+			Array,
+			Count,
+			Invalid
+		};
+
+		static bool StartWith(const std::string &str, const std::string &search, size_t pos)
+		{
+			for (unsigned long n = 0; n != search.length(); ++n)
+			{
+				if ((n + pos) > str.length() ||
+					str[n + pos] != search[n])
+					return false;
+			}
+			return true;
 		}
 
-		void Json::StrString(Result &result, const std::string &value)
+		static bool IsWhitespace(char c)
+		{
+			return (c == ' ' || c == '\t' || c == '\n');
+		}
+
+		static void ByPassTrailing(const std::string &content, size_t &pos)
+		{
+			char current = content[pos];
+			while (IsWhitespace(current))
+			{
+				++pos;
+				current = content[pos];
+			}
+		}
+
+		static EJsonElementType GetType(const Node &node)
+		{
+			if (node.IsArray())
+				return EJsonElementType::Array;
+			else if (!node.HaveChild())
+				return EJsonElementType::Value;
+			return EJsonElementType::Object;
+		}
+
+		static void StrString(Result &result, const std::string &value)
 		{
 			result.Append('"');
 			for (char c : value)
@@ -37,7 +78,7 @@ namespace Nectere
 			result.Append('"');
 		}
 
-		void Json::StrObject(const Node &node, Result &result, char open, char close, bool name)
+		static void StrObject(const Node &node, Result &result, char open, char close, bool name)
 		{
 			result.Append(open);
 			result.LineBreak();
@@ -62,7 +103,7 @@ namespace Nectere
 			result.Append(close);
 		}
 
-		void Json::StrValue(const Node &node, Result &result)
+		static void StrValue(const Node &node, Result &result)
 		{
 			if (node.IsNull())
 				result.Append("null");
@@ -76,7 +117,7 @@ namespace Nectere
 			}
 		}
 
-		void Json::Str(const Node &node, Result &result, bool addName)
+		static void Str(const Node &node, Result &result, bool addName)
 		{
 			result.Indent();
 			if (addName)
@@ -97,7 +138,7 @@ namespace Nectere
 			}
 		}
 
-		void Json::Str(const Node &node, Result &result)
+		static void Str(const Node &node, Result &result)
 		{
 			if (!node.GetName().empty() && result.GetDepth() == 0)
 			{
@@ -109,7 +150,7 @@ namespace Nectere
 				Str(node, result, true);
 		}
 
-		std::string Json::LoadString(const std::string &content, size_t &pos)
+		static std::string LoadString(const std::string &content, size_t &pos)
 		{
 			char current = content[pos];
 			if (current != '"')
@@ -156,7 +197,7 @@ namespace Nectere
 			return "";
 		}
 
-		Node Json::LoadValue(const std::string &content, size_t &pos, const std::string &name)
+		static Node LoadValue(const std::string &content, size_t &pos, const std::string &name)
 		{
 			Node ret(name);
 			char current = content[pos];
@@ -165,7 +206,7 @@ namespace Nectere
 				++pos;
 				std::string value = LoadString(content, pos);
 				if (pos == content.length())
-					return Node::null;
+					return NULL_NODE;
 				ret.SetValue(value);
 				ret.SetIsString(true);
 				return ret;
@@ -181,7 +222,7 @@ namespace Nectere
 					ret.SetNull(true);
 					return ret;
 				}
-				return Node::null;
+				return NULL_NODE;
 			}
 			else
 			{
@@ -199,16 +240,16 @@ namespace Nectere
 					haveChar = true;
 				}
 				if (pos == content.length() || !haveChar)
-					return Node::null;
+					return NULL_NODE;
 				ret.SetValue(value.str());
 				if (!ret.IsNumerical() && !ret.IsBoolean())
-					return Node::null;
+					return NULL_NODE;
 				ret.SetIsNotAString(true);
 				return ret;
 			}
 		}
 
-		Node Json::LoadArray(const std::string &content, size_t &pos, const std::string &name)
+		static Node LoadArray(const std::string &content, size_t &pos, const std::string &name)
 		{
 			Node ret(name);
 			bool needMore = true;
@@ -219,7 +260,7 @@ namespace Nectere
 				{
 					needMore = false;
 					Node value = LoadNode(content, pos, "");
-					if (value == Node::null)
+					if (value.IsNullNode())
 						return value;
 					ret.Emplace(value);
 					current = content[pos];
@@ -237,16 +278,16 @@ namespace Nectere
 					}
 				}
 				else
-					return Node::null;
+					return NULL_NODE;
 			}
 			if (pos == content.length() || needMore)
-				return Node::null;
+				return NULL_NODE;
 			++pos;
 			ByPassTrailing(content, pos);
 			return ret;
 		}
 
-		Node Json::LoadObject(const std::string &content, size_t &pos, const std::string &name)
+		static Node LoadObject(const std::string &content, size_t &pos, const std::string &name)
 		{
 			Node ret(name);
 			char current = content[pos];
@@ -268,11 +309,11 @@ namespace Nectere
 						needMore = false;
 						std::string name = LoadString(content, pos);
 						if (pos == content.length() || name.empty())
-							return Node::null;
+							return NULL_NODE;
 						ByPassTrailing(content, pos);
 						Node value = LoadNode(content, pos, name);
-						if (value == Node::null)
-							return Node::null;
+						if (value.IsNullNode())
+							return NULL_NODE;
 						ret.Add(value);
 						current = content[pos];
 						if (current == ',')
@@ -289,19 +330,19 @@ namespace Nectere
 						}
 					}
 					else
-						return Node::null;
+						return NULL_NODE;
 				}
 				if (pos == content.length() || needMore)
-					return Node::null;
+					return NULL_NODE;
 				++pos;
 				ByPassTrailing(content, pos);
 				return ret;
 			}
 			}
-			return Node::null;
+			return NULL_NODE;
 		}
 
-		Node Json::LoadNode(const std::string &content, size_t &pos, const std::string &name)
+		static Node LoadNode(const std::string &content, size_t &pos, const std::string &name)
 		{
 			char current = content[pos];
 			++pos;
@@ -319,7 +360,7 @@ namespace Nectere
 				{
 					if (!name.empty())
 						return LoadValue(content, pos, name);
-					return Node::null;
+					return NULL_NODE;
 				}
 				}
 			}
@@ -330,33 +371,7 @@ namespace Nectere
 			}
 			if (name.empty())
 				return LoadValue(content, pos, name);
-			return Node::null;
-		}
-
-		bool Json::StartWith(const std::string &str, const std::string &search, size_t pos)
-		{
-			for (unsigned long n = 0; n != search.length(); ++n)
-			{
-				if ((n + pos) > str.length() ||
-					str[n + pos] != search[n])
-					return false;
-			}
-			return true;
-		}
-
-		bool Json::IsWhitespace(char c)
-		{
-			return (c == ' ' || c == '\t' || c == '\n');
-		}
-
-		void Json::ByPassTrailing(const std::string &content, size_t &pos)
-		{
-			char current = content[pos];
-			while (IsWhitespace(current))
-			{
-				++pos;
-				current = content[pos];
-			}
+			return NULL_NODE;
 		}
 
 		void Json::Write(const Node &node, std::ostream &os, unsigned int indentFactor)
@@ -372,19 +387,19 @@ namespace Nectere
 
 		std::string Json::Str(const Node &node, unsigned int indentFactor, unsigned int depth, bool breakLine)
 		{
-			if (node == Node::null)
+			if (node.IsNullNode())
 				return "(null)";
 			Result result(Format{ indentFactor, depth, breakLine });
-			Str(node, result);
+			Dp::Str(node, result);
 			return result.Str();
 		}
 
 		std::string Json::Str(const Node &node, const Format &format)
 		{
-			if (node == Node::null)
+			if (node.IsNullNode())
 				return "(null)";
 			Result result(format);
-			Str(node, result);
+			Dp::Str(node, result);
 			return result.Str();
 		}
 
@@ -392,7 +407,7 @@ namespace Nectere
 		{
 			struct stat buf;
 			if (stat(path.c_str(), &buf) != 0)
-				return Node::null;
+				return NULL_NODE;
 			std::ifstream fileStream(path.c_str());
 			size_t nbChar = static_cast<size_t>(buf.st_size);
 			auto buffer = new char[nbChar + 1];
@@ -407,7 +422,7 @@ namespace Nectere
 		Node Json::LoadFromStream(std::istream &stream)
 		{
 			if (!stream.good())
-				return Node::null;
+				return NULL_NODE;
 			std::string content, line;
 			while (std::getline(stream, line))
 			{
@@ -424,11 +439,11 @@ namespace Nectere
 		{
 			size_t pos = 0;
 			if (jsonContent.empty())
-				return Node::null;
+				return NULL_NODE;
 			std::string content = jsonContent;
 			ByPassTrailing(content, pos);
 			if (content[pos] != '{')
-				return Node::null;
+				return NULL_NODE;
 			return LoadNode(jsonContent, pos, "");
 		}
 	}

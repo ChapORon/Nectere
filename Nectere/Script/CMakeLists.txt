@@ -1,5 +1,12 @@
 ﻿include_directories(..)
 
+set(LIB_NAME ${NAME}Script)
+set(NECTERE_DEPENDENCIES)
+set(LIB_VERSION_MAJOR 1)
+set(LIB_VERSION_MINOR 0)
+set(LIB_VERSION_PATCH 0)
+set(LIB_VERSION ${LIB_VERSION_MAJOR}.${LIB_VERSION_MINOR}.${LIB_VERSION_PATCH})
+
 set(SCRIPT_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/NativeFunction/DeclaredObjectFunction.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/NativeFunction/RawFunction.hpp
@@ -104,5 +111,5 @@ set(SCRIPT_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/VariableTypeHelper.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/VariableTypeHelper.hpp)
 
-add_library(${NAME}-script ${SCRIPT_SOURCES})
-target_include_directories(${NAME}-script PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+add_library(${LIB_NAME} ${SCRIPT_SOURCES})
+target_include_directories(${LIB_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

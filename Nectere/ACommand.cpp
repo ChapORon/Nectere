@@ -21,4 +21,19 @@ namespace Nectere
 	{
 		m_Application->SendEvent(ids, m_CommandID, data);
 	}
+
+	void ACommand::SendError(uint16_t id, const std::string &data)
+	{
+		m_Application->SendError(id, m_CommandID, data);
+	}
+
+	void ACommand::SendError(const std::vector<uint16_t> &ids, const std::string &data)
+	{
+		m_Application->SendError(ids, m_CommandID, data);
+	}
+
+	bool ACommand::IsAuthenticated(uint16_t userId)
+	{
+		return m_Application->IsAuthenticated(userId);
+	}
 }

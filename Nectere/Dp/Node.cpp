@@ -1,30 +1,34 @@
 #include "Dp/Node.hpp"
 
 #include <sstream>
+#include "Dp/StringUtils.hpp"
 
 namespace Nectere
 {
 	namespace Dp
 	{
-		const Node Node::null = Node(true);
+		const Node NULL_NODE = Node(true);
 
 		Node::Node() :
 			m_IsNullNode(false),
 			m_Null(false),
 			m_IsString(false),
-			m_IsNotAString(false) {}
+			m_IsNotAString(false),
+			m_IsArray(false) {}
 
 		Node::Node(bool null) :
 			m_IsNullNode(null),
 			m_Null(false),
 			m_IsString(false),
-			m_IsNotAString(false) {}
+			m_IsNotAString(false),
+			m_IsArray(false) {}
 
 		Node::Node(const char *name) :
 			m_IsNullNode(false),
 			m_Null(false),
 			m_IsString(false),
 			m_IsNotAString(false),
+			m_IsArray(false),
 			m_Name(name) {}
 
 		Node::Node(const std::string &name) :
@@ -32,6 +36,7 @@ namespace Nectere
 			m_Null(false),
 			m_IsString(false),
 			m_IsNotAString(false),
+			m_IsArray(false),
 			m_Name(name) {}
 
 		Node::Node(const std::string &name, const std::string &value) :
@@ -39,6 +44,7 @@ namespace Nectere
 			m_Null(false),
 			m_IsString(false),
 			m_IsNotAString(false),
+			m_IsArray(false),
 			m_Name(name),
 			m_Value(value) {}
 
@@ -48,6 +54,7 @@ namespace Nectere
 			m_Null = other.m_Null;
 			m_IsString = other.m_IsString;
 			m_IsNotAString = other.m_IsNotAString;
+			m_IsArray = other.m_IsArray;
 			m_Value = other.m_Value;
 			m_Childs = other.m_Childs;
 			return *this;
@@ -79,6 +86,7 @@ namespace Nectere
 		void Node::InternalAdd(const std::string &key, const std::vector<Node> &values, AddType addType)
 		{
 			Node newNode;
+			newNode.SetIsArray(true);
 			for (const Node &value : values)
 			{
 				Node tmp = value;
@@ -162,7 +170,7 @@ namespace Nectere
 
 		bool Node::Find(const std::string &key) const
 		{
-			return GetNode(key) != Node::null;
+			return GetNode(key).IsNotNullNode();
 		}
 
 		const Node &Node::GetNode(const std::string &key) const
@@ -182,14 +190,14 @@ namespace Nectere
 						if (nb < 0)
 						{
 							auto &ret = child.GetNode(newKey);
-							if (ret != Node::null)
+							if (ret.IsNotNullNode())
 								return ret;
 							else if (nb == -1)
-								return Node::null;
+								return NULL_NODE;
 						}
 					}
 				}
-				return Node::null;
+				return NULL_NODE;
 			}
 			else
 			{
@@ -204,10 +212,10 @@ namespace Nectere
 						if (nb < 0)
 							return child;
 						if (nb == -1)
-							return Node::null;
+							return NULL_NODE;
 					}
 				}
-				return Node::null;
+				return NULL_NODE;
 			}
 		}
 

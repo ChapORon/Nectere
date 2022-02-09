@@ -29,10 +29,18 @@ namespace Nectere
 			std::vector<WindowsNetworkUser *> m_Sessions;
 
 		private:
+			void CloseSession(uint16_t);
 			Concurrency::TaskResult AcceptConnection();
 
+			template <class... t_Args>
+			void DebugLog(const std::string &function, t_Args &&... args) const
+			{
+				if (m_Logger)
+					m_Logger->DebugLog("WindowsNetworkServer", function, std::forward<t_Args>(args)...);
+			}
+
 		public:
-			WindowsNetworkServer(int, Concurrency::ThreadSystem *, UserManager *);
+			WindowsNetworkServer(int, const std::string &, Concurrency::AThreadSystem *, const Logger *, UserManager *);
 			bool IsStarted() { return m_IsStarted; }
 			void Close();
 			bool Start() override;

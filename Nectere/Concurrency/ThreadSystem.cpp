@@ -12,14 +12,14 @@ namespace Nectere
         {
             if (!m_Running.load())
                 return TaskResult::Fail;
-            LOG(LogType::Verbose, "[Thread ", id, "] Waiting to start tasks");
+            Log(LogType::Verbose, "[Thread ", id, "] Waiting to start tasks");
             Task *task;
             {
                 std::unique_lock<std::mutex> lock(m_TaskMutex);
                 m_TaskCondition.wait(lock, [=] { return !m_Tasks.empty() || !m_Running.load(); });
                 if (m_Running.load())
                 {
-                    LOG(LogType::Verbose, "[Thread ", id, "] Starting task");
+                    Log(LogType::Verbose, "[Thread ", id, "] Starting task");
                     task = m_Tasks.front();
                     m_Tasks.pop();
                 }
@@ -37,31 +37,13 @@ namespace Nectere
         {
             if (!m_Running.load())
                 return TaskResult::Fail;
-            //LOG(LogType::Verbose, "[Thread ", id, "] Checking scheduled tasks");
+            //Log(LogType::Verbose, "[Thread ", id, "] Checking scheduled tasks");
             std::unique_lock<std::mutex> lock(m_ShedulerMutex);
             for (const auto &pair : m_ScheduledTasks)
             {
 
             }
             return TaskResult::NeedUpdate;
-        }
-
-        void ThreadSystem::AllocateThread(const std::function<TaskResult(int)> &callback)
-        {
-            if (m_Running.load())
-            {
-                unsigned int i = 0;
-                for (std::pair<Thread *, ThreadType> &pair : m_Threads)
-                {
-                    if (i > 1 && pair.second == ThreadType::TaskThread)
-                    {
-                        pair.second = ThreadType::AllocatedThread;
-                        pair.first->SetFunction(callback);
-                        return;
-                    }
-                    ++i;
-                }
-            }
         }
 
         void ThreadSystem::AddTask(Task *taskToAdd)
@@ -85,7 +67,7 @@ namespace Nectere
                 Clean();
             }
             else
-                LOG(LogType::Error, "Cannot await ThreadSystem outside of creator thread");
+                Log(LogType::Error, "Cannot await ThreadSystem outside of creator thread");
         }
 
         void ThreadSystem::Start()
@@ -97,9 +79,9 @@ namespace Nectere
                 for (int i = 0; i < maximumThread; ++i)
                 {
                     if (i == 0)
-                        m_Threads.emplace_back(std::make_pair(new Thread(i, [this](int id) { return ShedulerThreadLoop(id); }), ThreadType::SchedulerThread));
+                        m_Threads.emplace_back(std::make_pair(new Thread(m_Logger, i, [this](int id) { return ShedulerThreadLoop(id); }), ThreadType::SchedulerThread));
                     else
-                        m_Threads.emplace_back(std::make_pair(new Thread(i, [this](int id) { return TaskThreadLoop(id); }), ThreadType::TaskThread));
+                        m_Threads.emplace_back(std::make_pair(new Thread(m_Logger, i, [this](int id) { return TaskThreadLoop(id); }), ThreadType::TaskThread));
                     m_Threads[i].first->Start();
                 }
             }
@@ -109,6 +91,7 @@ namespace Nectere
         {
             if (m_Running.load())
             {
+                m_OnStopCallback();
                 m_Running.store(false);
                 m_TaskCondition.notify_all();
                 m_ThreadsCondition.notify_all();
@@ -117,7 +100,7 @@ namespace Nectere
 
         void ThreadSystem::Clean()
         {
-            LOG(LogType::Standard, "Stopping thread system");
+            Log(LogType::Standard, "Stopping thread system");
             for (std::pair<Thread *, ThreadType> &pair : m_Threads)
             {
                 Thread *thread = pair.first;

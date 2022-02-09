@@ -4,6 +4,7 @@
 #include "Application.hpp"
 #include "DynamicLibrary.hpp"
 #include "IDGenerator.hpp"
+#include "Logger.hpp"
 #include "Ptr.hpp"
 #include "UIDSet.hpp"
 
@@ -25,10 +26,12 @@ namespace Nectere
 	class ApplicationManager final : public IApplicationManager
 	{
 		friend class Application;
+		friend class Manager;
 		friend class UserManager;
 	private:
-		UserManager *m_UserManager;
+		Ptr<UserManager> m_UserManager;
 		IDGenerator m_ApplicationIDGenerator;
+		const Logger *m_Logger = nullptr;
 		UIDSet<Application> m_Applications;
 		std::unordered_map<uint16_t, std::pair<DynamicLibrary *, Application *>> m_LoadedApplication;
 		std::unordered_map<std::string, uint16_t> m_LoadedLibrary;
@@ -37,16 +40,33 @@ namespace Nectere
 		void Receive(uint16_t, const Event &);
 		void SendEvent(uint16_t, const Event &);
 		void SendEvent(const std::vector<uint16_t> &, const Event &);
+		Ptr<Application> CreateBaseApplication();
+		void SetLogger(const Logger *logger) { m_Logger = logger; }
+
+		template <class... t_Args>
+		void Log(LogType logType, t_Args &&... args) const
+		{
+			if (m_Logger)
+				m_Logger->Log(logType, std::forward<t_Args>(args)...);
+		}
+
+		template <class... t_Args>
+		void DebugLog(const std::string &function, t_Args &&... args) const
+		{
+			if (m_Logger)
+				m_Logger->DebugLog("ApplicationManager", function, std::forward<t_Args>(args)...);
+		}
 
 	public:
-		ApplicationManager(UserManager *);
-		Ptr<Application> CreateNewApplication(const std::string &);
-		const std::vector<Ptr<Application>> &GetApplications() const override { return m_Applications.GetElements(); }
-		void Update();
-		bool HaveApplication(uint16_t applicationID) const override { return m_Applications.Find(applicationID); }
-		bool LoadApplication(const std::string &) override;
-		bool UnloadApplication(uint16_t) override;
-		bool ReloadApplication(uint16_t) override;
-		~ApplicationManager();
+		NECTERE_EXPORT ApplicationManager(const Ptr<UserManager> &);
+		NECTERE_EXPORT Ptr<Application> CreateNewApplication(const std::string &);
+		inline const std::vector<Ptr<Application>> &GetApplications() const override { return m_Applications.GetElements(); }
+		NECTERE_EXPORT void Update();
+		inline bool HaveApplication(uint16_t applicationID) const override { return m_Applications.Find(applicationID); }
+		NECTERE_EXPORT bool LoadApplication(const std::string &) override;
+		NECTERE_EXPORT bool UnloadApplication(uint16_t) override;
+		NECTERE_EXPORT bool ReloadApplication(uint16_t) override;
+		NECTERE_EXPORT bool IsAuthenticated(uint16_t userId);
+		NECTERE_EXPORT ~ApplicationManager();
 	};
 }

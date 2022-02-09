@@ -1,25 +1,28 @@
 #include "Command/StopCommand.hpp"
 
+#include "Concurrency/AThreadSystem.hpp"
 #include "Logger.hpp"
 #include "NectereEventCode.hpp"
 #include "Network/AServer.hpp"
-#include "Concurrency/ThreadSystem.hpp"
 
 namespace Nectere
 {
 	namespace Command
 	{
-		StopCommand::StopCommand(const Ptr<Network::AServer> &server, const Ptr<Concurrency::ThreadSystem> &threadSystem):
-			ANectereCommand(NECTERE_EVENT_STOP, "stop", server, threadSystem) {}
+		StopCommand::StopCommand(const Ptr<Concurrency::AThreadSystem> &threadSystem) : ACommand(NECTERE_EVENT_STOP, "stop"), m_ThreadSystem(threadSystem) {}
 
 		bool StopCommand::IsValid(const std::string &) const { return true; }
 
-		void StopCommand::Treat(uint16_t sessionId, const std::string &)
+		void StopCommand::Treat(uint16_t sessionId, uint16_t, const std::string &)
 		{
-			LOG(LogType::Standard, '[', sessionId, "] Stopping server");
-			SendEvent(sessionId, "Server Stopped");
-			m_Server->Stop();
-			m_ThreadSystem->Stop();
+			if (IsAuthenticated(sessionId))
+			{
+				//LOG(LogType::Standard, '[', sessionId, "] Stopping server");
+				SendEvent(sessionId, "Server Stopped");
+				m_ThreadSystem->Stop();
+			}
+			else
+				SendError(sessionId, "You don't have permission to stop server");
 		}
 	}
 }

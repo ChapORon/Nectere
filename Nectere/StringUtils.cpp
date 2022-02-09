@@ -92,7 +92,7 @@ namespace Nectere
 		return vec;
 	}
 
-	int StringUtils::SmartSplitCheckSubStr(const std::string &str)
+	static int SmartSplitCheckSubStr(const std::string &str)
 	{
 		size_t nbClosingBracketInStr = 0;
 		size_t nbOpeningBracketInStr = 0;
@@ -161,28 +161,23 @@ namespace Nectere
 
 	bool StringUtils::Find(const std::string &str, char search, unsigned long &pos)
 	{
-		unsigned long n = 0;
-		while (str[n] != '\0')
+		pos = 0;
+		while (str[pos] != '\0')
 		{
-			if (str[n] == search)
-			{
-				pos = n;
+			if (str[pos] == search)
 				return true;
-			}
-			++n;
+			++pos;
 		}
 		return false;
 	}
 
 	bool StringUtils::Find(const std::string &str, char search)
 	{
-		unsigned long n = 0;
-		while (str[n] != '\0')
-		{
-			if (str[n] == search)
-				return true;
-			++n;
-		}
-		return false;
+		unsigned long n;
+		return Find(str, search, n);
 	}
+
+	std::vector<std::string> StringUtils::Split(const std::string &str, const std::string &regex) { return Split(str, regex, false, true); }
+	std::vector<std::string> StringUtils::Split(const std::string &str, const std::string &regex, bool trim) { return Split(str, regex, trim, true); }
+	int StringUtils::SmartSplit(std::vector<std::string> &vec, const std::string &str, const std::string &search) { return SmartSplit(vec, str, search, false); }
 }

@@ -15,7 +15,9 @@ static void HandlePrint(const std::vector<std::string> &args)
 int main()
 {
 	NecterePrompt prompt;
-	prompt.AddCommand("quit", [&prompt]() mutable { prompt.Stop(); });
+	auto stopLambda = [&prompt]() mutable { prompt.Stop(); };
+	prompt.AddCommand("quit", stopLambda);
+	prompt.AddCommand("exit", stopLambda);
 	prompt.AddCommand("clear", &HandleClear);
 	prompt.AddCommand("print", &HandlePrint);
 	prompt.Run();

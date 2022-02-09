@@ -2,26 +2,23 @@
 
 #include <string>
 #include <vector>
+#include "nectere_export.h"
 
 namespace Nectere
 {
-	class StringUtils final
+	namespace StringUtils
 	{
-	private:
-		static int SmartSplitCheckSubStr(const std::string &);
-
-	public:
-		static bool Find(const std::string &, char, unsigned long &);
-		static bool Find(const std::string &, char);
-		static bool StartWith(const std::string &, const std::string &);
-		static bool EndWith(const std::string &, const std::string &);
-		static void ReplaceAll(std::string &, const std::string &, const std::string &);
-		static void Trim(std::string &);
-		static size_t Count(const std::string &, const std::string &);
-		static std::vector<std::string> Split(const std::string &, const std::string &, bool, bool);
-		static inline std::vector<std::string> Split(const std::string &str, const std::string &regex) { return Split(str, regex, false, true); }
-		static inline std::vector<std::string> Split(const std::string &str, const std::string &regex, bool trim) { return Split(str, regex, trim, true); }
-		static int SmartSplit(std::vector<std::string> &, const std::string &, const std::string &, bool);
-		static int SmartSplit(std::vector<std::string> &vec, const std::string &str, const std::string &search) { return SmartSplit(vec, str, search, false); }
+		NECTERE_EXPORT bool Find(const std::string &, char, unsigned long &);
+		NECTERE_EXPORT bool Find(const std::string &, char);
+		NECTERE_EXPORT bool StartWith(const std::string &, const std::string &);
+		NECTERE_EXPORT bool EndWith(const std::string &, const std::string &);
+		NECTERE_EXPORT void ReplaceAll(std::string &, const std::string &, const std::string &);
+		NECTERE_EXPORT void Trim(std::string &);
+		NECTERE_EXPORT size_t Count(const std::string &, const std::string &);
+		NECTERE_EXPORT std::vector<std::string> Split(const std::string &, const std::string &, bool, bool);
+		NECTERE_EXPORT inline std::vector<std::string> Split(const std::string &, const std::string &);
+		NECTERE_EXPORT inline std::vector<std::string> Split(const std::string &, const std::string &, bool);
+		NECTERE_EXPORT int SmartSplit(std::vector<std::string> &, const std::string &, const std::string &, bool);
+		NECTERE_EXPORT int SmartSplit(std::vector<std::string> &, const std::string &, const std::string &);
 	};
 }

@@ -3,6 +3,7 @@
 #pragma once
 
 #include <unordered_set>
+#include "Logger.hpp"
 #include "Network/AServer.hpp"
 #include "Network/BoostNetworkUser.hpp"
 #include "UIDSet.hpp"
@@ -24,8 +25,15 @@ namespace Nectere
 			void CloseSession(uint16_t);
 			void AcceptSession();
 
+			template <class... t_Args>
+			void DebugLog(const std::string &function, t_Args &&... args) const
+			{
+				if (m_Logger)
+					m_Logger->DebugLog("BoostNetworkServer", function, std::forward<t_Args>(args)...);
+			}
+
 		public:
-			BoostNetworkServer(int, Concurrency::ThreadSystem *, UserManager *);
+			BoostNetworkServer(int, const std::string &, Concurrency::AThreadSystem *, const Logger *, UserManager *);
 			bool Start() override;
 			void Stop() override;
 		};

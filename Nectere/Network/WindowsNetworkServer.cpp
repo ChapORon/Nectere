@@ -3,12 +3,14 @@
 
 #include "Logger.hpp"
 #include "Concurrency/ThreadSystem.hpp"
+#include "UserManager.hpp"
 
 namespace Nectere
 {
 	namespace Network
 	{
-		WindowsNetworkServer::WindowsNetworkServer(int port, Concurrency::ThreadSystem *threadSystem, UserManager *userManager) : AServer(port, threadSystem, userManager)
+		WindowsNetworkServer::WindowsNetworkServer(int port, const std::string &whitelistFile, Concurrency::AThreadSystem *threadSystem, const Logger *logger, UserManager *userManager) :
+			AServer(port, whitelistFile, threadSystem, logger, userManager)
 		{
 			m_Timeout.tv_sec = 60;
 			m_Timeout.tv_usec = 0;
@@ -42,7 +44,7 @@ namespace Nectere
 							{
 								ULONG mode = 1;
 								if (ioctlsocket(m_ListenSocket, FIONBIO, &mode) == SOCKET_ERROR)
-									LOG(LogType::Error, "Cannot change blocking mode of server socket: ", WSAGetLastError());
+									Log(LogType::Error, "Cannot change blocking mode of server socket: ", WSAGetLastError());
 								else
 								{
 									m_IsStarted = true;
@@ -51,19 +53,26 @@ namespace Nectere
 								}
 							}
 							else
-								LOG(LogType::Error, "Cannot listen to server socket: ", WSAGetLastError());
+								Log(LogType::Error, "Cannot listen to server socket: ", WSAGetLastError());
 						}
 						else
-							LOG(LogType::Error, "Cannot bind server socket: ", WSAGetLastError());
+							Log(LogType::Error, "Cannot bind server socket: ", WSAGetLastError());
 					}
 					else
-						LOG(LogType::Error, "Cannot create socket for server on port ", m_Port, ": ", WSAGetLastError());
+						Log(LogType::Error, "Cannot create socket for server on port ", m_Port, ": ", WSAGetLastError());
 				}
 				else
-					LOG(LogType::Error, "Cannot start Windows Socket");
+					Log(LogType::Error, "Cannot start Windows Socket");
 				m_ListenSocket = INVALID_SOCKET;
 			}
 			return false;
+		}
+
+		void WindowsNetworkServer::CloseSession(uint16_t id)
+		{
+			Log(LogType::Standard, "Closing session with ID: ", id);
+			m_UserManager->RemoveUser(id);
+			m_Sessions.erase(std::find_if(m_Sessions.begin(), m_Sessions.end(), [=](const WindowsNetworkUser *session) { return session->GetID() == id; }));
 		}
 
 		Nectere::Concurrency::TaskResult WindowsNetworkServer::AcceptConnection()
@@ -81,24 +90,35 @@ namespace Nectere
 			int ret = select(0, &m_FdRead, &m_FdWrite, nullptr, &m_Timeout);
 			if (ret < 0)
 			{
-				LOG(LogType::Error, "Error on select: ", WSAGetLastError());
+				Log(LogType::Error, "Error on select: ", WSAGetLastError());
 				return Concurrency::TaskResult::Fail;
 			}
 			else if (ret == 0)
 			{
-				LOG(LogType::Warning, "No network activity in the last ", m_Timeout.tv_sec, '.', m_Timeout.tv_usec, " seconds");
+				Log(LogType::Warning, "No network activity in the last ", m_Timeout.tv_sec, '.', m_Timeout.tv_usec, " seconds");
 				return Concurrency::TaskResult::NeedUpdate;
 			}
 			if (FD_ISSET(m_ListenSocket, &m_FdRead))
 			{
-				SOCKET ClientSocket = accept(m_ListenSocket, nullptr, nullptr);
+				sockaddr addr;
+				SOCKET ClientSocket = accept(m_ListenSocket, &addr, nullptr);
 				if (ClientSocket != INVALID_SOCKET)
 				{
-					LOG(LogType::Verbose, "New connection");
+					std::string clientIP = addr.sa_data;
+					Log(LogType::Standard, "New connection on IP ", clientIP);
+					if (IsIPWhitelisted(clientIP))
+					{
+// 						if (auto networkUser = m_UserManager->AddUser<WindowsNetworkUser>(m_Logger, ClientSocket))
+// 						{
+// 							uint16_t id = networkUser->GetID();
+// 							Log(LogType::Standard, "New session opened with ID: ", id);
+// 							m_Sessions.emplace_back(networkUser);
+// 						}
+					}
 				}
 				else
 				{
-					LOG(LogType::Error, "Error while accepting new connection: ", WSAGetLastError());
+					Log(LogType::Error, "Error while accepting new connection: ", WSAGetLastError());
 					Close();
 					return Concurrency::TaskResult::Fail;
 				}
@@ -126,7 +146,7 @@ namespace Nectere
 			}
 
 			for (WindowsNetworkUser *session : m_Sessions)
-				delete(session);
+				m_UserManager->RemoveUserInstant(session->GetID());
 			m_Sessions.clear();
 		}
 	}

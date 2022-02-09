@@ -3,22 +3,21 @@
 #include <functional>
 #include <memory>
 #include <queue>
+#include "Concurrency/AThreadSystem.hpp"
 #include "Concurrency/Task.hpp"
-#include "Concurrency/TaskResult.hpp"
 #include "Concurrency/Thread.hpp"
 
 namespace Nectere
 {
     namespace Concurrency
     {
-        class ThreadSystem
+        class ThreadSystem: public AThreadSystem
         {
         private:
             enum class ThreadType: short
             {
                 TaskThread,
-                SchedulerThread,
-                AllocatedThread
+                SchedulerThread
             };
 
         private:
@@ -32,24 +31,20 @@ namespace Nectere
             std::condition_variable m_ThreadsCondition;
             std::vector<std::pair<Thread *, ThreadType>> m_Threads;
             std::vector<std::pair<size_t, Task *>> m_ScheduledTasks;
+            std::function<void()> m_OnStopCallback;
 
         private:
             TaskResult TaskThreadLoop(int);
             TaskResult ShedulerThreadLoop(int);
             void Clean();
-            void AddTask(Task *);
+            void AddTask(Task *) override;
 
         public:
             ThreadSystem();
-            void AllocateThread(const std::function<TaskResult(int)> &);
-            template <typename t_Object>
-            void AddTask(t_Object *obj, TaskResult(t_Object:: *fct)()) { AddTask<FunctorTask<t_Object>>(obj, fct); }
-            template <typename t_Task, typename ...t_Arg>
-            void AddTask(t_Arg&&... args) { AddTask(new t_Task(std::forward<t_Arg>(args)...)); }
-            void AddTask(const std::function<TaskResult()> &taskToAdd) { AddTask<CallableTask>(taskToAdd); }
-            void Start();
-            void Stop();
-            void Await();
+            void Start() override;
+            void SetOnStopCallback(const std::function<void()> &onStopCallback) override { m_OnStopCallback = onStopCallback; }
+            void Stop() override;
+            void Await() override;
             ~ThreadSystem();
         };
     }

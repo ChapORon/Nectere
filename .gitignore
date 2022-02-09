@@ -353,3 +353,6 @@ MigrationBackup/
 #CLION
 .idea/
 cmake-build-debug/
+
+# NECTERE INSTALL
+nectere-build

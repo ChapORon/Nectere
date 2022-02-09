@@ -1,8 +1,10 @@
+#pragma once
+
 #include "Configuration.hpp"
 
 namespace Nectere
 {
-	namespace Parameters
+	namespace Network
 	{
 		class NetworkPortParameter final : public Configuration::ATypedParameter<int>
 		{

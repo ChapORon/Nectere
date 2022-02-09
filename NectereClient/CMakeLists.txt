@@ -11,6 +11,8 @@ if(Boost_FOUND)
     link_directories(${Boost_LIBRARY_DIRS})
 
     set(SOURCE_FILES
+            ${CMAKE_CURRENT_SOURCE_DIR}/CommandTreater.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/CommandTreater.hpp
             ${CMAKE_CURRENT_SOURCE_DIR}/NecterePrompt.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/NecterePrompt.hpp
             ${CMAKE_CURRENT_SOURCE_DIR}/Prompt.cpp

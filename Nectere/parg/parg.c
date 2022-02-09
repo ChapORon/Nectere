@@ -70,7 +70,7 @@ static int parse_argument(parg *root, int argc, char **argv, int n)
 		{
 			if (value == NULL || value[0] != '\0')
 			{
-				argument->callback(argument->name, value, argument->restriction);
+				argument->callback(argument->callback_data,argument->name, value, argument->restriction);
 			}
 		}
 	}
@@ -105,7 +105,7 @@ void parg_free(parg *root)
 	}
 }
 
-void parg_add_callback(parg *root, const char *argument, void (*callback)(const char *, const char *, int), int restriction, int value_restriction)
+void parg_add_callback(parg *root, const char *argument, void (*callback)(void *, const char *, const char *, int), void *data, int restriction, int value_restriction)
 {
 	if (root != NULL)
 	{
@@ -115,6 +115,7 @@ void parg_add_callback(parg *root, const char *argument, void (*callback)(const 
 			new_argument->restriction = restriction;
 			new_argument->value_restriction = value_restriction;
 			new_argument->name = argument;
+			new_argument->callback_data = data;
 			new_argument->callback = callback;
 		}
 	}

@@ -3,6 +3,7 @@
 #include <chrono>
 #include "AApplicationHandler.hpp"
 #include "ACommand.hpp"
+#include "Dp/Node.hpp"
 #include "Event.hpp"
 #include "Ptr.hpp"
 #include "UIDSet.hpp"
@@ -35,22 +36,27 @@ namespace Nectere
 	private:
 		void SetName(const std::string &name) { m_Name = name; };
 		ACommand *InternalAddCommand(ACommand *);
+		void SendEvent(uint16_t, bool, uint16_t, const std::string &);
+		void SendEvent(const std::vector<uint16_t> &, bool, uint16_t, const std::string &);
 		void SendEvent(uint16_t, uint16_t, const std::string &);
 		void SendEvent(const std::vector<uint16_t> &, uint16_t, const std::string &);
+		void SendError(uint16_t, uint16_t, const std::string &);
+		void SendError(const std::vector<uint16_t> &, uint16_t, const std::string &);
 		//TODO: Add GetCommand<t_CommandType>
 
 	public:
-		Application(uint16_t, const std::string &, const Ptr<ApplicationManager> &);
-		uint16_t GetID() const { return m_ID; }
-		const std::string &GetName() const { return m_Name; };
-		void SetHandler(AApplicationHandler *handler) { m_Handler = handler; };
+		NECTERE_EXPORT Application(uint16_t, const std::string &, const Ptr<ApplicationManager> &);
+		inline uint16_t GetID() const { return m_ID; }
+		inline const std::string &GetName() const { return m_Name; };
+		inline void SetHandler(AApplicationHandler *handler) { m_Handler = handler; };
 		template <typename t_CommandType, typename ...t_Arg>
-		Ptr<t_CommandType> AddCommand(t_Arg&&... args) { return Ptr(dynamic_cast<t_CommandType *>(InternalAddCommand(new t_CommandType(std::forward<t_Arg>(args)...)))); }
-		bool IsEventAllowed(const Event &, bool &);
-		void Treat(uint16_t, const Event &);
-		void Update();
-		void BeforeReloading(Dp::Node &);
-		void AfterReloading(const Dp::Node &);
-		const std::vector<Ptr<ACommand>> &GetCommands() const { return m_Commands.GetElements(); }
+		inline Ptr<t_CommandType> AddCommand(t_Arg&&... args) { return Ptr(dynamic_cast<t_CommandType *>(InternalAddCommand(new t_CommandType(std::forward<t_Arg>(args)...)))); }
+		NECTERE_EXPORT bool IsEventAllowed(const Event &, bool &);
+		NECTERE_EXPORT void Treat(uint16_t, const Event &);
+		NECTERE_EXPORT void Update();
+		NECTERE_EXPORT void BeforeReloading(Dp::Node &);
+		NECTERE_EXPORT void AfterReloading(const Dp::Node &);
+		NECTERE_EXPORT bool IsAuthenticated(uint16_t userId);
+		inline const std::vector<Ptr<ACommand>> &GetCommands() const { return m_Commands.GetElements(); }
 	};
 }

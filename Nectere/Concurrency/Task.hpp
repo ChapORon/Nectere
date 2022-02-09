@@ -3,7 +3,7 @@
 #include <atomic>
 #include <functional>
 #include <mutex>
-#include "TaskResult.hpp"
+#include "Concurrency/TaskResult.hpp"
 
 namespace Nectere
 {

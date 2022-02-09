@@ -40,7 +40,7 @@ namespace Nectere
 
 		void CodingStyle::Init()
 		{
-			ms_DoCodingStyle = Nectere::Configuration::Get<bool>("ScriptEngine.DoCodingStyle");
+			ms_DoCodingStyle = GetConfiguration().Get<bool>("ScriptEngine.DoCodingStyle");
 		}
 
 		const char *CodingStyle::ErrorNameOf(const NameType &nameType)

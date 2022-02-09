@@ -245,7 +245,7 @@ namespace Nectere
 		{
 			if (!m_Compiled)
 				return Variable::NULL_VARIABLE;
-			Unit *newUnit = CreateVar(Nectere::Logger::ScriptEngine::runtime, variableName, variableType, variableValue, searchInNative, tags);
+			Unit *newUnit = CreateVar(Nectere::GetLogger_ScriptEngine_runtime(), variableName, variableType, variableValue, searchInNative, tags);
 			if (!newUnit)
 				return Variable::NULL_VARIABLE;
 			return Variable(newUnit, true);
@@ -562,7 +562,7 @@ namespace Nectere
 				}
 				else
 				{
-					Unit *newVariable = CreateUnit(Nectere::Logger::ScriptEngine::compilation, globalToCompile.m_Name, globalToCompile.m_TypeName, globalToCompile.m_Value, true, globalToCompile.m_Tags);
+					Unit *newVariable = CreateUnit(Nectere::GetLogger_ScriptEngine_compilation(), globalToCompile.m_Name, globalToCompile.m_TypeName, globalToCompile.m_Value, true, globalToCompile.m_Tags);
 					if (!newVariable)
 						return false;
 					if (globalToCompile.m_IsPrivate)

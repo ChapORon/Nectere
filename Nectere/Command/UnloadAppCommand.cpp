@@ -7,13 +7,17 @@ namespace Nectere
 {
 	namespace Command
 	{
-		UnloadAppCommand::UnloadAppCommand(const Ptr<Network::AServer> &server, const Ptr<Concurrency::ThreadSystem> &threadSystem):
-			ANectereCommand(NECTERE_EVENT_APP_UNLOAD, "unload", server, threadSystem) {}
+		UnloadAppCommand::UnloadAppCommand(): ACommand(NECTERE_EVENT_APP_UNLOAD, "unload") {}
 
 		bool UnloadAppCommand::IsValid(const std::string &) const { return true; }
 
-		void UnloadAppCommand::Treat(uint16_t sessionId, const std::string &value)
+		void UnloadAppCommand::Treat(uint16_t sessionId, uint16_t, const std::string &value)
 		{
+			if (value == "Nectere")
+			{
+				SendError(sessionId, "Cannot unload base application Nectere");
+				return;
+			}
 			for (Ptr<Application> application : m_ApplicationManager->GetApplications())
 			{
 				if (application->GetName() == value)
@@ -27,7 +31,7 @@ namespace Nectere
 			}
 			std::stringstream str;
 			str << "Cannot unload \"" << value << "\": No such application";
-			SendEvent(sessionId, str.str());
+			SendError(sessionId, str.str());
 		}
 	}
 }

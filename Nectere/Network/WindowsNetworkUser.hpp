@@ -4,8 +4,10 @@
 #include <mutex>
 #include <queue>
 #include "AUser.hpp"
-#include "Event.hpp"
 #include "Concurrency/TaskResult.hpp"
+#include "Event.hpp"
+#include "Logger.hpp"
+#include "Network/Header.hpp"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -18,15 +20,7 @@ namespace Nectere
 		class WindowsNetworkUser: public AUser
 		{
 		private:
-			struct Header
-			{
-				uint16_t applicationID;
-				uint16_t messageType;
-				uint16_t apiVersion;
-				uint64_t messageLength;
-			};
-
-		private:
+			const Logger *m_Logger = nullptr;
 			SOCKET m_Socket;
 			std::atomic_bool m_Closed;
 			std::mutex m_SendBufferMutex;
@@ -36,16 +30,31 @@ namespace Nectere
             Concurrency::TaskResult ReadHeader(Header &);
             Concurrency::TaskResult ReadMessage(const Header &);
             Concurrency::TaskResult Write(const Nectere::Event &);
+			void SendError(uint16_t, const std::string &);
+			void Clean();
+
+			template <class... t_Args>
+			void Log(LogType logType, t_Args &&... args) const
+			{
+				if (m_Logger)
+					m_Logger->Log(logType, std::forward<t_Args>(args)...);
+			}
+
+			template <class... t_Args>
+			void DebugLog(const std::string &function, t_Args &&... args) const
+			{
+				if (m_Logger)
+					m_Logger->DebugLog("WindowsNetworkUser", function, std::forward<t_Args>(args)...);
+			}
 
 		public:
-			WindowsNetworkUser(const SOCKET &);
+			WindowsNetworkUser(const Logger *, const SOCKET &);
 			SOCKET GetSocket() { return m_Socket; }
 			void Send(const Nectere::Event &);
-			void Clean();
-			void Close();
+			void OnClose() override;
             Concurrency::TaskResult Read();
             Concurrency::TaskResult Write();
-			~WindowsNetworkUser() { Close(); }
+			~WindowsNetworkUser() { Clean(); }
 		};
 	}
 }

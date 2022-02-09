@@ -2,7 +2,8 @@
 
 namespace Nectere
 {
-	IDGenerator::IDGenerator(): m_ID(0) {}
+	IDGenerator::IDGenerator() : m_ID(0) {}
+	IDGenerator::IDGenerator(uint16_t firstID) : m_ID(firstID) {}
 
 	uint16_t IDGenerator::GenerateID()
 	{

@@ -23,16 +23,19 @@ namespace Nectere
 		void SetApplication(const Ptr<Application> &, const Ptr<IApplicationManager> &);
 
 	protected:
-		void SendEvent(uint16_t, const std::string &);
-		void SendEvent(const std::vector<uint16_t> &, const std::string &);
+		NECTERE_EXPORT void SendEvent(uint16_t, const std::string &);
+		NECTERE_EXPORT void SendEvent(const std::vector<uint16_t> &, const std::string &);
+		NECTERE_EXPORT void SendError(uint16_t, const std::string &);
+		NECTERE_EXPORT void SendError(const std::vector<uint16_t> &, const std::string &);
+		NECTERE_EXPORT bool IsAuthenticated(uint16_t userId);
 
 	public:
-		ACommand(uint16_t, const std::string &);
-		uint16_t GetID() const { return m_CommandID; }
-		const std::string &GetName() const { return m_Name; };
-		virtual bool IsValid(const std::string &) const = 0;
-		virtual void Treat(uint16_t, const std::string &) = 0;
-		virtual void OnInit() {}
-		virtual void Update() {}
+		NECTERE_EXPORT ACommand(uint16_t, const std::string &);
+		inline uint16_t GetID() const { return m_CommandID; }
+		inline const std::string &GetName() const { return m_Name; };
+		NECTERE_EXPORT virtual bool IsValid(const std::string &) const = 0;
+		NECTERE_EXPORT virtual void Treat(uint16_t, uint16_t, const std::string &) = 0;
+		NECTERE_EXPORT virtual void OnInit() {}
+		NECTERE_EXPORT virtual void Update() {}
 	};
 }

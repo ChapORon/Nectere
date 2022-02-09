@@ -1,5 +1,12 @@
 ﻿include_directories(..)
 
+set(LIB_NAME ${NAME}Dp)
+set(NECTERE_DEPENDENCIES)
+set(LIB_VERSION_MAJOR 1)
+set(LIB_VERSION_MINOR 0)
+set(LIB_VERSION_PATCH 0)
+set(LIB_VERSION ${LIB_VERSION_MAJOR}.${LIB_VERSION_MINOR}.${LIB_VERSION_PATCH})
+
 set(DP_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/Format.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Json.cpp
@@ -10,8 +17,34 @@ set(DP_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/Result.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/Serializer.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/Serializer.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/StringUtils.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/StringUtils.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/Xml.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/Xml.hpp)
 	
-add_library(${NAME}-dp ${DP_SOURCES})
-target_include_directories(${NAME}-dp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+add_library(${LIB_NAME} ${DP_SOURCES})
+target_include_directories(${LIB_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+set_target_properties(${LIB_NAME} PROPERTIES
+					SOVERSION ${LIB_VERSION_MAJOR}
+					VERSION ${LIB_VERSION})
+
+include(GenerateExportHeader)
+generate_export_header(${LIB_NAME} EXPORT_FILE_NAME ${CMAKE_CURRENT_SOURCE_DIR}/nectere_dp_export.h)
+
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+	${LIB_NAME}ConfigVersion.cmake
+	VERSION ${LIB_VERSION}
+	COMPATIBILITY SameMajorVersion)
+
+include(GNUInstallDirs)
+install(TARGETS ${LIB_NAME}
+		PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${NAME}/Dp
+		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+				COMPONENT ${LIB_NAME}_RunTime
+		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+				COMPONENT ${LIB_NAME}_RunTime
+				NAMELINK_COMPONENT ${NAME}_Development
+		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+				COMPONENT ${LIB_NAME}_Development)

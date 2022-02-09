@@ -3,6 +3,7 @@
 #include <string>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include "nectere_export.h"
 
 #ifdef WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -110,14 +111,11 @@ namespace Nectere
 			#endif
 		}
 
-		unsigned long GetTimestamp() const { return m_Timestamp; }
+		inline unsigned long GetTimestamp() const { return m_Timestamp; }
 
-		std::string GetPath() const { return m_Path; }
+		inline std::string GetPath() const { return m_Path; }
 
-		explicit operator bool() const
-		{
-			return m_LoadedLibrairy != nullptr;
-		}
+		inline explicit operator bool() const { return m_LoadedLibrairy != nullptr; }
 
 		~DynamicLibrary()
 		{

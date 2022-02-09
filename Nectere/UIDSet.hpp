@@ -53,7 +53,7 @@ namespace Nectere
 		}
 
 	public:
-		const std::vector<Ptr<t_IDType>> &GetElements() const {return m_PtrElements;}
+		inline const std::vector<Ptr<t_IDType>> &GetElements() const {return m_PtrElements;}
 
 		bool Add(t_IDType *element)
 		{
@@ -130,11 +130,11 @@ namespace Nectere
 			m_Elements.clear();
 		}
 
-		auto begin() { return m_PtrElements.begin(); }
-		auto begin() const { return m_PtrElements.begin(); }
-		auto end() { return m_PtrElements.end(); }
-		auto end() const { return m_PtrElements.end(); }
+		inline auto begin() { return m_PtrElements.begin(); }
+		inline auto begin() const { return m_PtrElements.begin(); }
+		inline auto end() { return m_PtrElements.end(); }
+		inline auto end() const { return m_PtrElements.end(); }
 
-		~UIDSet() { Clear(); }
+		inline ~UIDSet() { Clear(); }
 	};
 }

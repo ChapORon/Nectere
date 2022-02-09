@@ -32,10 +32,12 @@ int main(int argc, char **argv)
 		std::cout << "==================================================" << std::endl;
 		std::vector<int> ret = { 12, 5, 8, 65 };
 		std::vector<int> ret1 = { 9 };
+		std::vector<int> empty;
 		Dp::Node root;
 		root.Insert("test", ret);
 		root.Insert("test1", ret1);
 		root.Insert("test2", 3);
+		root.Insert("empty", empty);
 		std::cout << Dp::Json::Str(root) << std::endl;
 		root.Replace("test2", ret);
 		root.Merge("test", ret);

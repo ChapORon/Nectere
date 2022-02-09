@@ -2,6 +2,7 @@
 
 #include <mutex>
 #include <queue>
+#include "nectere_export.h"
 
 namespace Nectere
 {
@@ -13,8 +14,9 @@ namespace Nectere
 		std::mutex m_Mutex;
 
 	public:
-		IDGenerator();
-		uint16_t GenerateID();
-		void FreeID(uint16_t);
+		NECTERE_EXPORT IDGenerator();
+		NECTERE_EXPORT IDGenerator(uint16_t);
+		NECTERE_EXPORT uint16_t GenerateID();
+		NECTERE_EXPORT void FreeID(uint16_t);
 	};
 }

@@ -6,8 +6,8 @@ namespace Nectere
 {
     namespace Concurrency
     {
-        Thread::Thread(int id) : m_ID(id), m_Running(false), m_Stopping(false), m_Stopped(false), m_Function([](int) {return TaskResult::NeedUpdate; }) {}
-        Thread::Thread(int id, const std::function<TaskResult(int)> &fct): m_ID(id), m_Running(false), m_Stopping(false), m_Stopped(false), m_Function(fct) {}
+        Thread::Thread(const Logger *logger, int id) : m_ID(id), m_Logger(logger), m_Running(false), m_Stopping(false), m_Stopped(false), m_Function([](int) {return TaskResult::NeedUpdate; }) {}
+        Thread::Thread(const Logger *logger, int id, const std::function<TaskResult(int)> &fct): m_ID(id), m_Logger(logger), m_Running(false), m_Stopping(false), m_Stopped(false), m_Function(fct) {}
 
         void Thread::Loop()
         {
@@ -26,7 +26,7 @@ namespace Nectere
         void Thread::Run()
         {
             Loop();
-            LOG(LogType::Standard, "[Thread ", m_ID, "] Thread loop has stopped");
+            Log(LogType::Standard, "[Thread ", m_ID, "] Thread loop has stopped");
             m_Stopped.store(true);
             m_ThreadCondition.notify_all();
         }
@@ -41,7 +41,7 @@ namespace Nectere
             if (!m_Running.load() && !m_Stopping.load())
             {
                 m_Running.store(true);
-                LOG(LogType::Standard, "[Thread ", m_ID, "] Starting thread");
+                Log(LogType::Standard, "[Thread ", m_ID, "] Starting thread");
                 m_Thread = std::thread(std::bind(&Thread::Run, this));
             }
         }
@@ -50,7 +50,7 @@ namespace Nectere
         {
             if (m_Running.load())
             {
-                LOG(LogType::Standard, "[Thread ", m_ID, "] Stopping thread");
+                Log(LogType::Standard, "[Thread ", m_ID, "] Stopping thread");
                 m_Stopping.store(true);
                 m_Running.store(false);
                 std::unique_lock<std::mutex> lock(m_ThreadMutex);

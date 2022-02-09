@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Parameters/LogInFileParameter.hpp"
 
 namespace Nectere

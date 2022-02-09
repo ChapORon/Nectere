@@ -1,5 +1,12 @@
 ﻿include_directories(..)
 
+set(LIB_NAME ${NAME}Concurrency)
+set(NECTERE_DEPENDENCIES)
+set(LIB_VERSION_MAJOR 1)
+set(LIB_VERSION_MINOR 0)
+set(LIB_VERSION_PATCH 0)
+set(LIB_VERSION ${LIB_VERSION_MAJOR}.${LIB_VERSION_MINOR}.${LIB_VERSION_PATCH})
+
 set(CONCURRENCY_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/Task.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/Task.hpp
@@ -9,5 +16,5 @@ set(CONCURRENCY_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/ThreadSystem.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ThreadSystem.hpp)
 	
-add_library(${NAME}-concurrency ${CONCURRENCY_SOURCES})
-target_include_directories(${NAME}-concurrency PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+add_library(${LIB_NAME} ${CONCURRENCY_SOURCES})
+target_include_directories(${LIB_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

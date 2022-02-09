@@ -10,23 +10,11 @@
 
 namespace Nectere
 {
-	class ThreadSystem;
+	class AThreadSystem;
 	class UserManager;
 	namespace Network
 	{
 		class AServer;
-
-		AServer *MakeServer(int port, Concurrency::ThreadSystem *threadSystem, UserManager *userManager)
-		{
-			#ifdef USE_BOOST
-				return new BoostNetworkServer(port, threadSystem, userManager);
-			#else
-				#ifdef WIN32
-					return new WindowsNetworkServer(port, threadSystem, userManager);
-				#else
-					return nullptr;
-				#endif
-			#endif
-		}
+		AServer *MakeServer(int, const std::string &, Concurrency::AThreadSystem *, const Logger *, UserManager *);
 	}
 }

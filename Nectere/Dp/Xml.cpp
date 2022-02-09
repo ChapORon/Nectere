@@ -7,12 +7,52 @@ namespace Nectere
 {
 	namespace Dp
 	{
+		const Node NULL_NODE = Node(true);
+
+		void Str(const Node &node, Result &result);
+
+		static bool StartWith(const std::string &str, const std::string &search, size_t pos)
+		{
+			for (unsigned long n = 0; n != search.length(); ++n)
+			{
+				if ((n + pos) > str.length() ||
+					str[n + pos] != search[n])
+					return false;
+			}
+			return true;
+		}
+
+		static bool IsWhitespace(char c)
+		{
+			return (c == ' ' || c == '\t' || c == '\n');
+		}
+
+		static void ByPassTrailing(const std::string &content, size_t &pos)
+		{
+			char current = content[pos];
+			while (IsWhitespace(current))
+			{
+				++pos;
+				current = content[pos];
+			}
+		}
+
 		Node Xml::Create(const std::string &name, const std::string &version, const std::string &encoding)
 		{
 			Node node(name);
 			node.Add("__xmldeclarations__.xml.version", version);
 			node.Add("__xmldeclarations__.xml.encoding", encoding);
 			return node;
+		}
+
+		template <typename t_AttributeType>
+		void Xml::AddAttribute(Node &node, const std::string &key, const t_AttributeType &value)
+		{
+			if (StringUtils::Find(key, '.'))
+				return;
+			std::string attributeKey = "__xmlattributes__.";
+			attributeKey += key;
+			node.Add(attributeKey, value);
 		}
 
 		void Xml::AddDeclaration(Node &node, const std::string &key, const std::string &attribute, const std::string &value)
@@ -24,7 +64,7 @@ namespace Nectere
 			node.Add(attributeKey, value);
 		}
 
-		void Xml::AddValue(Result &content, const std::string &value)
+		static void AddValue(Result &content, const std::string &value)
 		{
 			for (char c : value)
 			{
@@ -46,10 +86,10 @@ namespace Nectere
 			}
 		}
 
-		bool Xml::AddDeclarations(const Node &node, Result &result)
+		static bool AddDeclarations(const Node &node, Result &result)
 		{
 			Node elements = node.GetNode("__xmldeclarations__");
-			if (result.GetDepth() == 0 && elements != Node::null)
+			if (result.GetDepth() == 0 && elements.IsNotNullNode())
 			{
 				unsigned int n = 0;
 				for (const auto &element : elements)
@@ -74,10 +114,10 @@ namespace Nectere
 			return false;
 		}
 
-		bool Xml::AddAttributes(const Node &node, Result &result)
+		static bool AddAttributes(const Node &node, Result &result)
 		{
 			Node attributes = node.GetNode("__xmlattributes__");
-			if (attributes != Node::null)
+			if (attributes.IsNotNullNode())
 			{
 				for (const auto &attribute : attributes)
 				{
@@ -92,7 +132,7 @@ namespace Nectere
 			return false;
 		}
 
-		void Xml::AddNodes(const Node &node, Result &result)
+		static void AddNodes(const Node &node, Result &result)
 		{
 			if (node.HaveValue())
 			{
@@ -119,7 +159,7 @@ namespace Nectere
 			}
 		}
 
-		void Xml::Str(const Node &node, Result &result)
+		static void Str(const Node &node, Result &result)
 		{
 			if (result.GetDepth() == 0 && node.IsEmpty())
 			{
@@ -172,7 +212,7 @@ namespace Nectere
 			}
 		}
 
-		bool Xml::ByPassComment(const std::string &content, size_t &pos)
+		static bool ByPassComment(const std::string &content, size_t &pos)
 		{
 			if (StartWith(content, "<!--", pos))
 			{
@@ -185,14 +225,14 @@ namespace Nectere
 			return false;
 		}
 
-		void Xml::ByPass(const std::string &content, size_t &pos)
+		static void ByPass(const std::string &content, size_t &pos)
 		{
 			ByPassTrailing(content, pos);
 			if (ByPassComment(content, pos))
 				ByPass(content, pos);
 		}
 
-		std::string Xml::LoadValue(const std::string &content, size_t &pos)
+		static std::string LoadValue(const std::string &content, size_t &pos)
 		{
 			bool escaping = false;
 			char current = content[pos];
@@ -253,7 +293,7 @@ namespace Nectere
 			return "";
 		}
 
-		Node Xml::LoadAttribute(const std::string &content, size_t &pos)
+		static Node LoadAttribute(const std::string &content, size_t &pos)
 		{
 			bool escaping = false;
 			std::string name, value, escape;
@@ -266,7 +306,7 @@ namespace Nectere
 				(pos + 1) == content.length() ||
 				content[pos + 1] != '"' ||
 				(pos + 2) == content.length())
-				return Node::null;
+				return NULL_NODE;
 			pos += 2;
 			char current = content[pos];
 			while (content[pos] != '"' && pos != content.length())
@@ -310,13 +350,13 @@ namespace Nectere
 				current = content[pos];
 			}
 			if (pos == content.length())
-				return Node::null;
+				return NULL_NODE;
 			value = value.substr(0, value.find_last_not_of(" \t\n") + 1);
 			++pos;
 			return Node(name, value);
 		}
 
-		Node Xml::CreateNodeFromTag(const std::string &content, bool declarations)
+		static Node CreateNodeFromTag(const std::string &content, bool declarations)
 		{
 			size_t pos = 0;
 			char current = content[pos];
@@ -354,12 +394,12 @@ namespace Nectere
 			return node;
 		}
 
-		Node Xml::LoadNode(const std::string &content, size_t &pos)
+		static Node LoadNode(const std::string &content, size_t &pos)
 		{
 			++pos;
 			char current = content[pos];
 			if (current == '/')
-				return Node::null;
+				return NULL_NODE;
 			std::string nodeOpenTag;
 			nodeOpenTag += current;
 			++pos;
@@ -371,7 +411,7 @@ namespace Nectere
 				current = content[pos];
 			}
 			if (pos == content.length())
-				return Node::null;
+				return NULL_NODE;
 			Node node = CreateNodeFromTag(nodeOpenTag, false);
 			++pos;
 			ByPass(content, pos);
@@ -394,28 +434,28 @@ namespace Nectere
 				if (!StartWith(content, "</", pos))
 				{
 					Node child = LoadNode(content, pos);
-					if (child == Node::null)
-						return Node::null;
+					if (child.IsNullNode())
+						return NULL_NODE;
 					node.Add(child);
 				}
 				if (pos == content.length())
-					return Node::null;
+					return NULL_NODE;
 			}
 			node.SetValue(nodeValue);
 			pos += 2;
 			if (!StartWith(content, node.GetName(), pos))
-				return Node::null;
+				return NULL_NODE;
 			pos += node.GetName().length() + 1;
 			ByPass(content, pos);
 			return node;
 		}
 
-		Node Xml::LoadDeclaration(const std::string &content, size_t &pos)
+		static Node LoadDeclaration(const std::string &content, size_t &pos)
 		{
 			++pos;
 			char current = content[pos];
 			if (current == '/')
-				return Node::null;
+				return NULL_NODE;
 			std::string nodeOpenTag;
 			nodeOpenTag += current;
 			++pos;
@@ -428,7 +468,7 @@ namespace Nectere
 			}
 			++pos;
 			if (pos == content.length())
-				return Node::null;
+				return NULL_NODE;
 			++pos;
 			Node declaration = CreateNodeFromTag(nodeOpenTag, true);
 			if (declaration.GetName() == "xml")
@@ -439,45 +479,19 @@ namespace Nectere
 			return declaration;
 		}
 
-		Node Xml::LoadDeclarations(const std::string &content, size_t &pos)
+		static Node LoadDeclarations(const std::string &content, size_t &pos)
 		{
 			Node declarations("__xmldeclarations__");
 			while (StartWith(content, "<?", pos))
 			{
 				++pos;
 				Node declaration = LoadDeclaration(content, pos);
-				if (declaration == Node::null)
-					return Node::null;
+				if (declaration.IsNullNode())
+					return NULL_NODE;
 				declarations.Add(declaration);
 				ByPass(content, pos);
 			}
 			return declarations;
-		}
-
-		bool Xml::StartWith(const std::string &str, const std::string &search, size_t pos)
-		{
-			for (unsigned long n = 0; n != search.length(); ++n)
-			{
-				if ((n + pos) > str.length() ||
-					str[n + pos] != search[n])
-					return false;
-			}
-			return true;
-		}
-
-		bool Xml::IsWhitespace(char c)
-		{
-			return (c == ' ' || c == '\t' || c == '\n');
-		}
-
-		void Xml::ByPassTrailing(const std::string &content, size_t &pos)
-		{
-			char current = content[pos];
-			while (IsWhitespace(current))
-			{
-				++pos;
-				current = content[pos];
-			}
 		}
 
 		void Xml::Write(const Node &node, std::ostream &os, unsigned int indentFactor)
@@ -493,19 +507,19 @@ namespace Nectere
 
 		std::string Xml::Str(const Node &node, unsigned int indentFactor, unsigned int depth, bool breakLine)
 		{
-			if (node == Node::null)
+			if (node.IsNullNode())
 				return "(null)";
 			Result result(Format{ indentFactor, depth, breakLine });
-			Str(node, result);
+			Dp::Str(node, result);
 			return result.Str();
 		}
 
 		std::string Xml::Str(const Node &node, const Format &format)
 		{
-			if (node == Node::null)
+			if (node.IsNullNode())
 				return "(null)";
 			Result result(format);
-			Str(node, result);
+			Dp::Str(node, result);
 			return result.Str();
 		}
 
@@ -513,7 +527,7 @@ namespace Nectere
 		{
 			struct stat buf;
 			if (stat(path.c_str(), &buf) != 0)
-				return Node::null;
+				return NULL_NODE;
 			std::ifstream fileStream(path.c_str());
 			size_t nbChar = static_cast<size_t>(buf.st_size);
 			auto buffer = new char[nbChar + 1];
@@ -522,15 +536,15 @@ namespace Nectere
 			std::string content(buffer);
 			Node node = LoadFromContent(content);
 			delete[](buffer);
-			if (node != Node::null && node.GetNode("__xmldeclarations__.xml") == Node::null)
-				return Node::null;
+			if (node.IsNotNullNode() && node.GetNode("__xmldeclarations__.xml").IsNullNode())
+				return NULL_NODE;
 			return node;
 		}
 
 		Node Xml::LoadFromStream(std::istream &stream)
 		{
 			if (!stream.good())
-				return Node::null;
+				return NULL_NODE;
 			std::string content, line;
 			while (std::getline(stream, line))
 			{
@@ -548,14 +562,14 @@ namespace Nectere
 			size_t pos = 0;
 			ByPass(content, pos);
 			Node declarations = LoadDeclarations(content, pos);
-			if (declarations == Node::null)
-				return Node::null;
+			if (declarations.IsNullNode())
+				return NULL_NODE;
 			ByPass(content, pos);
 			if (content[pos] != '<')
-				return Node::null;
+				return NULL_NODE;
 			Node node = LoadNode(content, pos);
-			if (node == Node::null)
-				return Node::null;
+			if (node.IsNullNode())
+				return NULL_NODE;
 			if (!declarations.IsEmpty())
 				node.Add(declarations);
 			return node;

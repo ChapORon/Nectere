@@ -9,22 +9,19 @@
 
 namespace Nectere
 {
-	Logger Logger::out("[{d}-{M}-{y} {h}:{m}:{s}.{ms}] {log_type}{msg}");
-	Logger Logger::ScriptEngine::init("[{d}-{M}-{y} {h}:{m}:{s}.{ms}] {log_type}{msg}");
-	Logger Logger::ScriptEngine::parsing("[{d}-{M}-{y} {h}:{m}:{s}.{ms}] {log_type}{msg}");
-	Logger Logger::ScriptEngine::compilation("[{d}-{M}-{y} {h}:{m}:{s}.{ms}] {log_type}{msg}");
-	Logger Logger::ScriptEngine::runtime("[{d}-{M}-{y} {h}:{m}:{s}.{ms}] {log_type}{msg}");
+	Logger::Logger() {}
+	Logger::Logger(const std::string &format) : m_Format(format) {}
 
-	Logger::Logger() : m_Mute(false) {}
-	Logger::Logger(const std::string &format) : m_Mute(false), m_Format(format){}
-
-	void Logger::SetFormat(const std::string &format) { m_Format = format; }
-	void Logger::Mute() { m_Mute = true; }
-	void Logger::Unmute() { m_Mute = false; }
-
-	void Logger::Log(LogType logType, const std::string &str) const
+	void Logger::Init(bool isVerbose, bool logInFile, const std::string &logFilePath)
 	{
-		if (logType == LogType::Verbose && Configuration::Is("Verbose", false))
+		m_IsVerbose = isVerbose;
+		m_LogInFile = logInFile;
+		m_LogFilePath = logFilePath;
+	}
+
+	void Logger::LogStr(LogType logType, const std::string &str) const
+	{
+		if (logType == LogType::Verbose && !m_IsVerbose)
 			return;
 		std::string message = str;
 		std::string log = m_Format;
@@ -108,9 +105,9 @@ namespace Nectere
 
 	void Logger::LogFile(const std::string &log, const std::string &suffix, std::tm *localTime) const
 	{
-		if (Configuration::Is("LogFile", true))
+		if (m_LogInFile)
 		{
-			std::string path = Configuration::Get<std::string>("LogPath");
+			std::string path = m_LogFilePath;
 			std::stringstream filename;
 			filename << "Nectere-";
 			filename << std::to_string(localTime->tm_year + 1900);

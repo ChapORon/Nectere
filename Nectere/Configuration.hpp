@@ -3,12 +3,14 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include "nectere_export.h"
 #include "Dp/Node.hpp"
 #include "parg/parg_def.h"
 
 struct parg;
 namespace Nectere
 {
+	class Logger;
 	class Configuration final
 	{
 	private:
@@ -25,7 +27,7 @@ namespace Nectere
 			virtual std::string GetDescription() const { return ""; };
 			virtual void ParseArgument(const char *str) = 0;
 			virtual void LoadNode(const Dp::Node &node) = 0;
-			void AddToParg(parg *) const;
+			void AddToParg(parg *, Configuration *) const;
 			void DumpHelp() const;
 
 		public:
@@ -90,40 +92,46 @@ namespace Nectere
 		};
 
 	private:
-		static bool ms_ShouldStartServer;
-		static std::string ms_ConfigurationFilePath;
-		static std::unordered_map<std::string, std::string> ms_ArgumentToParameter;
-		static std::unordered_map<std::string, AParameter *> ms_Parameters;
+		bool m_ShouldStartServer;
+		const Logger *m_Logger = nullptr;
+		std::string m_ConfigurationFilePath;
+		std::unordered_map<std::string, std::string> m_ArgumentToParameter;
+		std::unordered_map<std::string, AParameter *> m_Parameters;
+		Dp::Node m_LoadedConfig;
 
 	private:
-		static void Callback(const char *, const char *, int);
-		static void Help(const char *, const char *, int);
-		static void ConfigFile(const char *, const char *, int);
-		static void AddParameter(AParameter *);
+		void AddParameter(AParameter *);
 
 	public:
+		Configuration();
+		const Dp::Node &GetLoadedConfig() const { return m_LoadedConfig; }
+		void SetLogger(const Logger *logger) { m_Logger = logger; }
+		void Callback(const char *, const char *);
+		void Help();
+		void ConfigFile(const char *);
+
 		template <typename t_ParameterType>
-		static bool Is(const std::string &parameter, const t_ParameterType &value)
+		bool Is(const std::string &parameter, const t_ParameterType &value)
 		{
-			auto it = ms_Parameters.find(parameter);
-			if (it != ms_Parameters.end())
+			auto it = m_Parameters.find(parameter);
+			if (it != m_Parameters.end())
 				return dynamic_cast<ATypedParameter<t_ParameterType> *>((*it).second)->GetValue() == value;
 			return false;
 		}
 
 		template <typename t_ParameterType>
-		static const t_ParameterType &Get(const std::string &parameter)
+		const t_ParameterType &Get(const std::string &parameter)
 		{
-			return dynamic_cast<ATypedParameter<t_ParameterType> *>(ms_Parameters[parameter])->GetValue();
+			return dynamic_cast<ATypedParameter<t_ParameterType> *>(m_Parameters[parameter])->GetValue();
 		}
 
-		static AParameter *Fetch(const std::string &);
+		AParameter *Fetch(const std::string &);
 
 		template <typename t_ParameterType, typename ...t_Arg>
-		static void Add(t_Arg&&... args) { AddParameter(new t_ParameterType(std::forward<t_Arg>(args)...)); }
+		void Add(t_Arg&&... args) { AddParameter(new t_ParameterType(std::forward<t_Arg>(args)...)); }
 
-		static bool Have(const std::string &parameter);
-		static bool LoadConfiguration(int argc, char **arg);
-		static void Clear();
+		bool Have(const std::string &parameter);
+		bool LoadConfiguration(int argc, char **arg);
+		void Clear();
 	};
 }

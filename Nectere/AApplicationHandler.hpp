@@ -1,5 +1,7 @@
 #pragma once
 
+#include "nectere_export.h"
+
 namespace Nectere
 {
 	class Application;
@@ -10,7 +12,7 @@ namespace Nectere
 		class Node;
 	}
 
-	class AApplicationHandler
+	class NECTERE_EXPORT AApplicationHandler
 	{
 		friend class Application;
 	private:

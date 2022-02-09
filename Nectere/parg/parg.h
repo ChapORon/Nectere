@@ -2,6 +2,7 @@
 #define ARGUMENT_PARSER_H_
 
 #include "parg_def.h"
+#include "parg_export.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -12,14 +13,15 @@ typedef struct parg
 	int restriction;
 	int value_restriction;
 	const char *name;
-	void (*callback)(const char *, const char *, int);
+	void *callback_data;
+	void (*callback)(void *, const char *, const char *, int);
 	struct parg *childs[CHAR_MAX];
 } parg;
 
-parg *parg_alloc();
-void parg_free(parg *);
-void parg_add_callback(parg *, const char *, void (*callback)(const char *, const char *, int), int, int);
-void parg_parse(parg *, int, char **);
+PARG_EXPORT parg *parg_alloc();
+PARG_EXPORT void parg_free(parg *);
+PARG_EXPORT void parg_add_callback(parg *, const char *, void (*callback)(void *, const char *, const char *, int), void *, int, int);
+PARG_EXPORT void parg_parse(parg *, int, char **);
 
 #ifdef __cplusplus
 }

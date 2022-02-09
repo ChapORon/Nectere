@@ -1,17 +1,17 @@
 #pragma once
 
-#include "ANectereCommand.hpp"
+#include "ACommand.hpp"
 
 namespace Nectere
 {
 	namespace Command
 	{
-		class ApplicationListCommand : public ANectereCommand
+		class ApplicationListCommand : public ACommand
 		{
 		public:
-			ApplicationListCommand(const Ptr<Network::AServer> &, const Ptr<Concurrency::ThreadSystem> &);
+			ApplicationListCommand();
 			bool IsValid(const std::string &) const override;
-			void Treat(uint16_t, const std::string &) override;
+			void Treat(uint16_t, uint16_t, const std::string &) override;
 		};
 	}
 }

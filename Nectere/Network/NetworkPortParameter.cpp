@@ -1,8 +1,8 @@
-#include "Parameters/NetworkPortParameter.hpp"
+#include "Network/NetworkPortParameter.hpp"
 
 namespace Nectere
 {
-	namespace Parameters
+	namespace Network
 	{
 		int NetworkPortParameter::DefaultValue() const { return 4242; }
 

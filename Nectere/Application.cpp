@@ -2,6 +2,7 @@
 
 #include "ApplicationManager.hpp"
 #include "Logger.hpp"
+#include "VersionHelper.hpp"
 
 namespace Nectere
 {
@@ -25,14 +26,46 @@ namespace Nectere
 		return command;
 	}
 
+	void Application::SendEvent(uint16_t id, bool error, uint16_t commandID, const std::string &data)
+	{
+		Event event;
+		event.m_Error = error;
+		event.m_ApplicationID = m_ID;
+		event.m_EventCode = commandID;
+		event.m_Data = data;
+		VersionHelper::SetupEvent(event);
+		m_ApplicationManager->SendEvent(id, event);
+	}
+
+	void Application::SendEvent(const std::vector<uint16_t> &ids, bool error, uint16_t commandID, const std::string &data)
+	{
+		Event event;
+		event.m_Error = error;
+		event.m_ApplicationID = m_ID;
+		event.m_EventCode = commandID;
+		event.m_Data = data;
+		VersionHelper::SetupEvent(event);
+		m_ApplicationManager->SendEvent(ids, event);
+	}
+
 	void Application::SendEvent(uint16_t id, uint16_t commandID, const std::string &data)
 	{
-		m_ApplicationManager->SendEvent(id, { m_ID, commandID, data });
+		SendEvent(id, false, commandID, data);
 	}
 
 	void Application::SendEvent(const std::vector<uint16_t> &ids, uint16_t commandID, const std::string &data)
 	{
-		m_ApplicationManager->SendEvent(ids, { m_ID, commandID, data });
+		SendEvent(ids, false, commandID, data);
+	}
+
+	void Application::SendError(uint16_t id, uint16_t commandID, const std::string &data)
+	{
+		SendEvent(id, true, commandID, data);
+	}
+
+	void Application::SendError(const std::vector<uint16_t> &ids, uint16_t commandID, const std::string &data)
+	{
+		SendEvent(ids, true, commandID, data);
 	}
 
 	bool Application::IsEventAllowed(const Event &event, bool &eventExist)
@@ -48,7 +81,7 @@ namespace Nectere
 
 	void Application::Treat(uint16_t sessionID, const Event &event)
 	{
-		m_Commands.Get(event.m_EventCode)->Treat(sessionID, event.m_Data);
+		m_Commands.Get(event.m_EventCode)->Treat(sessionID, event.m_CanalID, event.m_Data);
 	}
 
 	void Application::Update()
@@ -80,5 +113,10 @@ namespace Nectere
 		m_IsReloading.store(false);
 		if (m_Handler != nullptr)
 			m_Handler->OnAfterReload(root);
+	}
+
+	bool Application::IsAuthenticated(uint16_t userId)
+	{
+		return m_ApplicationManager->IsAuthenticated(userId);
 	}
 }

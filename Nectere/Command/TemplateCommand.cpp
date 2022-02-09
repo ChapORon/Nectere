@@ -7,14 +7,13 @@ namespace Nectere
 {
 	namespace Command
 	{
-		TemplateCommand::TemplateCommand(const Ptr<Network::AServer> &server, const Ptr<Concurrency::ThreadSystem> &threadSystem):
-			ANectereCommand(NECTERE_EVENT_TEMPLATE, "stop", server, threadSystem) {}
+		TemplateCommand::TemplateCommand(): ACommand(NECTERE_EVENT_TEMPLATE, "template") {}
 
 		bool TemplateCommand::IsValid(const std::string &) const { return true; }
 
-		void TemplateCommand::Treat(uint16_t sessionId, const std::string &)
+		void TemplateCommand::Treat(uint16_t sessionId, uint16_t, const std::string &)
 		{
-			SendEvent(sessionId, "Command Not Implemented Yet");
+			SendError(sessionId, "Command Not Implemented Yet");
 		}
 	}
 }

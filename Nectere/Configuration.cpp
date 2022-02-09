@@ -4,15 +4,30 @@
 #include <iostream>
 #include "Dp/Json.hpp"
 #include "Logger.hpp"
+#include "Parameters/AuthParameter.hpp"
+#include "Parameters/LogPathParameter.hpp"
+#include "Parameters/VerboseParameter.hpp"
 #include "parg/parg.h"
 #include "Script/CodingStyle.hpp"
 
 namespace Nectere
 {
-	bool Configuration::ms_ShouldStartServer = true;
-	std::string Configuration::ms_ConfigurationFilePath = "conf.json";
-	std::unordered_map<std::string, std::string> Configuration::ms_ArgumentToParameter;
-	std::unordered_map<std::string, Configuration::AParameter *> Configuration::ms_Parameters;
+	Configuration::Configuration(): m_ShouldStartServer(true), m_ConfigurationFilePath("D:\\Programmation\\Nectere\\NectereConfig.json")
+	{
+		//Auth
+		Add<Parameters::AuthParameter>();
+
+		//Log
+		Add<Parameters::VerboseParameter>();
+		Add<Parameters::LogInFileParameter>();
+		Add<Parameters::LogPathParameter>(dynamic_cast<Parameters::LogInFileParameter *>(Fetch("LogInFile")));
+
+		//Script Engine
+		Add<BoolParameter>("ScriptEngine.DoSmartBuild", true);
+		Add<BoolParameter>("ScriptEngine.DoCodingStyle", false);
+		Add<BoolParameter>("ScriptEngine.DisplayName", false);
+		Add<BoolParameter>("ScriptEngine.DisplayTag", false);
+	}
 
 	bool Configuration::BoolParameter::DefaultValue() const { return m_DefaultValue; }
 	bool Configuration::BoolParameter::Parse() const { return true; }
@@ -28,12 +43,17 @@ namespace Nectere
 		m_Restrictions[argument] = std::pair(restriction, valueRestriction);
 	}
 
-	void Configuration::AParameter::AddToParg(parg *root) const
+	static void callback_Callback(void *data, const char *name, const char *value, int)
+	{
+		((Configuration *)data)->Callback(name, value);
+	}
+
+	void Configuration::AParameter::AddToParg(parg *root, Configuration *configuration) const
 	{
 		for (const auto &pair : m_Restrictions)
 		{
-			ms_ArgumentToParameter[pair.first] = GetName();
-			parg_add_callback(root, pair.first.c_str(), &Configuration::Callback, pair.second.first, pair.second.second);
+			configuration->m_ArgumentToParameter[pair.first] = GetName();
+			parg_add_callback(root, pair.first.c_str(), &callback_Callback, configuration, pair.second.first, pair.second.second);
 		}
 	}
 
@@ -68,12 +88,12 @@ namespace Nectere
 
 	Configuration::AParameter *Configuration::Fetch(const std::string &parameter)
 	{
-		return ms_Parameters[parameter];
+		return m_Parameters[parameter];
 	}
 
 	bool Configuration::Have(const std::string &parameter)
 	{
-		return (ms_Parameters.find(parameter) != ms_Parameters.end());
+		return (m_Parameters.find(parameter) != m_Parameters.end());
 	}
 
 	void Configuration::AddParameter(AParameter *parameter)
@@ -81,71 +101,82 @@ namespace Nectere
 		if (parameter != nullptr)
 		{
 			parameter->Init();
-			ms_Parameters[parameter->GetName()] = parameter;
+			m_Parameters[parameter->GetName()] = parameter;
 		}
+	}
+
+	static void callback_ConfigFile(void *data, const char *, const char *value, int)
+	{
+		((Configuration *)data)->ConfigFile(value);
+	}
+
+	static void callback_Help(void *data, const char *, const char *, int)
+	{
+		((Configuration *)data)->Help();
 	}
 
 	bool Configuration::LoadConfiguration(int argc, char **argv)
 	{
 		parg *root = parg_alloc();
-		for (const auto &pair : ms_Parameters)
-			pair.second->AddToParg(root);
-		parg_add_callback(root, "config-file", &Configuration::ConfigFile, PARG_DOUBLE_DASH_RESTRICTION, PARG_NEED_NO_VALUE);
-		parg_add_callback(root, "help", &Configuration::Help, PARG_DOUBLE_DASH_RESTRICTION, PARG_NEED_NO_VALUE);
-		parg_add_callback(root, "h", &Configuration::Help, PARG_SIMPLE_DASH_RESTRICTION, PARG_NEED_NO_VALUE);
+		for (const auto &pair : m_Parameters)
+			pair.second->AddToParg(root, this);
+		parg_add_callback(root, "config-file", &callback_ConfigFile, this, PARG_DOUBLE_DASH_RESTRICTION, PARG_NEED_NO_VALUE);
+		parg_add_callback(root, "help", &callback_Help, this, PARG_DOUBLE_DASH_RESTRICTION, PARG_NEED_NO_VALUE);
+		parg_add_callback(root, "h", &callback_Help, this, PARG_SIMPLE_DASH_RESTRICTION, PARG_NEED_NO_VALUE);
 		parg_parse(root, argc, argv);
 		parg_free(root);
-		std::string configPath = std::filesystem::absolute(ms_ConfigurationFilePath).string();
-		Dp::Node node = Dp::Json::LoadFromFile(configPath);
-		if (!node.IsNull())
+		std::string configPath = std::filesystem::absolute(m_ConfigurationFilePath).string();
+		m_LoadedConfig = Dp::Json::LoadFromFile(configPath);
+		if (m_LoadedConfig.IsNotNullNode())
 		{
-			for (const auto &pair : ms_Parameters)
+			for (const auto &pair : m_Parameters)
 			{
 				auto parameter = pair.second;
 				std::string nodeName = parameter->GetJsonName();
 				if (!nodeName.empty())
 				{
-					if (node.Find(nodeName))
-						parameter->LoadNode(node.GetNode(nodeName));
+					if (m_LoadedConfig.Find(nodeName))
+						parameter->LoadNode(m_LoadedConfig.GetNode(nodeName));
 				}
 			}
 		}
 //		if (ms_ShouldStartServer)
 //			Script::CodingStyle::Init();
-		return ms_ShouldStartServer;
+		return m_ShouldStartServer;
 	}
 
 	void Configuration::Clear()
 	{
-		for (const auto &pair : ms_Parameters)
+		for (const auto &pair : m_Parameters)
 			delete(pair.second);
 	}
 
-	void Configuration::Callback(const char *name, const char *value, int)
+	void Configuration::Callback(const char *name, const char *value)
 	{
 		if (name != nullptr)
 		{
-			auto it = ms_ArgumentToParameter.find(std::string(name));
-			if (it != ms_ArgumentToParameter.end())
+			auto it = m_ArgumentToParameter.find(std::string(name));
+			if (it != m_ArgumentToParameter.end())
 			{
-				auto parameter = ms_Parameters.find((*it).second);
-				if (parameter != ms_Parameters.end())
+				auto parameter = m_Parameters.find((*it).second);
+				if (parameter != m_Parameters.end())
 					(*parameter).second->ParseArgument(value);
 			}
 		}
 	}
 
-	void Configuration::Help(const char *, const char *, int)
+	void Configuration::Help()
 	{
-		ms_ShouldStartServer = false;
+		m_ShouldStartServer = false;
 		std::cout << "-h --help\t\t\tShow help on the command lines parameters allowed." << std::endl;
-		for (const auto &pair : ms_Parameters)
+		for (const auto &pair : m_Parameters)
 			pair.second->DumpHelp();
 	}
 
-	void Configuration::ConfigFile(const char *, const char *value, int)
+	void Configuration::ConfigFile(const char *value)
 	{
-		ms_ConfigurationFilePath = value;
-		LOG(LogType::Verbose, "Changed configuration file path to \"", ms_ConfigurationFilePath, '\"');
+		m_ConfigurationFilePath = value;
+		if (m_Logger)
+			m_Logger->Log(LogType::Verbose, "Changed configuration file path to \"", m_ConfigurationFilePath, '\"');
 	}
 }

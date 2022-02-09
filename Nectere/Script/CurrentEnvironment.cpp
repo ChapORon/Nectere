@@ -38,7 +38,7 @@ namespace Nectere
 		Unit *CurrentEnvironment::CreateVar(const std::string &variableName, const std::string &variableTypeName, const std::string &variableValue, const std::vector<Tag> &tags) const
 		{
 			if (m_Script)
-				return m_Script->CreateVar(Nectere::Logger::ScriptEngine::runtime, variableName, variableTypeName, variableValue, true, tags);
+				return m_Script->CreateVar(Nectere::GetLogger_ScriptEngine_runtime(), variableName, variableTypeName, variableValue, true, tags);
 			return m_Native->CreateUnit(variableName, variableTypeName, variableValue, tags);
 		}
 
